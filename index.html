@@ -541,6 +541,24 @@
             font-family: 'Arial Black', sans-serif;
         }
 
+        .mutagen-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .mutagen-bonus-text {
+            font-size: 0.6rem;
+            font-weight: bold;
+            color: #ffdd66;
+            text-shadow: 1px 1px 1px #000;
+            text-align: center;
+            height: 20px; /* Reserve space */
+            margin-top: 12px; /* Offset to clear the rotated 45deg diamond corners */
+        }
+
         /* Central Assembly Core Circle */
         .mutation-center-circle {
             width: 85px;
@@ -711,9 +729,15 @@
                 <button class="tab-btn" data-tree="Mutations">Mutations</button>
             </div>
 
-            <div class="stats-banner">
-                <div>Total Points Allocated: <span id="total-points">0</span></div>
-                <div>Total Unslotted: <span id="unslotted-count">0</span></div>
+            <div class="stats-banner" style="flex-direction: column; align-items: stretch; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; width: 100%;">
+                    <div>Total Points Allocated: <span id="total-points">0</span></div>
+                    <div>Total Unslotted: <span id="unslotted-count">0</span></div>
+                </div>
+                <div id="mutagen-stats-row" style="display: flex; justify-content: space-between; width: 100%; font-size: 0.8rem; color: #ffdd66; border-top: 1px solid #333; padding-top: 4px; margin-top: 2px;">
+                    <div>Active Mutagen Bonuses:</div>
+                    <div id="mutagen-stats-values">None</div>
+                </div>
             </div>
 
             <div class="tree-window theme-combat" id="window-frame">
@@ -736,8 +760,14 @@
 
         <div class="framework-window" id="framework-container">
             <div class="left-diamonds">
-                <div class="mutagen-slot-container" data-mutagen-id="1"></div>
-                <div class="mutagen-slot-container" data-mutagen-id="2"></div>
+                <div class="mutagen-wrapper">
+                    <div class="mutagen-slot-container" data-mutagen-id="1"></div>
+                    <div class="mutagen-bonus-text" data-mutagen-bonus-id="1"></div>
+                </div>
+                <div class="mutagen-wrapper">
+                    <div class="mutagen-slot-container" data-mutagen-id="2"></div>
+                    <div class="mutagen-bonus-text" data-mutagen-bonus-id="2"></div>
+                </div>
             </div>
 
             <div class="left-slots">
@@ -767,8 +797,14 @@
             </div>
 
             <div class="right-diamonds">
-                <div class="mutagen-slot-container" data-mutagen-id="3"></div>
-                <div class="mutagen-slot-container" data-mutagen-id="4"></div>
+                <div class="mutagen-wrapper">
+                    <div class="mutagen-slot-container" data-mutagen-id="3"></div>
+                    <div class="mutagen-bonus-text" data-mutagen-bonus-id="3"></div>
+                </div>
+                <div class="mutagen-wrapper">
+                    <div class="mutagen-slot-container" data-mutagen-id="4"></div>
+                    <div class="mutagen-bonus-text" data-mutagen-bonus-id="4"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -823,6 +859,105 @@
             { name: "Lesser Blue Mutagen", color: "blue" }, { name: "Blue Mutagen", color: "blue" }, { name: "Greater Blue Mutagen", color: "blue" },
             { name: "Lesser Green Mutagen", color: "green" }, { name: "Green Mutagen", color: "green" }, { name: "Greater Green Mutagen", color: "green" }
         ];
+
+        function getMutagenBonusValue(name, matchCount = 0) {
+            if (!name) return 0;
+            const lowerName = name.toLowerCase();
+            let baseVal = 0;
+            if (lowerName.includes("red")) {
+                baseVal = 7;
+                if (lowerName.includes("lesser")) baseVal = 5;
+                else if (lowerName.includes("greater")) baseVal = 10;
+            } else if (lowerName.includes("blue")) {
+                baseVal = 7;
+                if (lowerName.includes("lesser")) baseVal = 5;
+                else if (lowerName.includes("greater")) baseVal = 10;
+            } else if (lowerName.includes("green")) {
+                baseVal = 100;
+                if (lowerName.includes("lesser")) baseVal = 50;
+                else if (lowerName.includes("greater")) baseVal = 150;
+            }
+            return baseVal * (1 + matchCount);
+        }
+
+        function getMutagenBonusText(name, matchCount = 0) {
+            if (!name) return "";
+            const lowerName = name.toLowerCase();
+            const val = getMutagenBonusValue(name, matchCount);
+            if (lowerName.includes("red")) {
+                return `+${val}% Attack Power`;
+            } else if (lowerName.includes("blue")) {
+                return `+${val}% Sign Intensity`;
+            } else if (lowerName.includes("green")) {
+                return `+${val} Vitality`;
+            }
+            return "";
+        }
+
+        function getMutagenMatchCount(mId) {
+            const m = mutagenSlots[mId];
+            if (!m) return 0;
+            
+            const slotMapping = {
+                1: [1, 2, 3],
+                2: [7, 8, 9],
+                3: [4, 5, 6],
+                4: [10, 11, 12]
+            };
+            
+            const slotsToCheck = slotMapping[mId];
+            if (!slotsToCheck) return 0;
+            
+            let matchCount = 0;
+            slotsToCheck.forEach(slotId => {
+                const skill = characterSlots[slotId];
+                if (skill) {
+                    const treeColor = skill.tree === 'Combat' ? 'red' : 
+                                      skill.tree === 'Signs' ? 'blue' : 
+                                      skill.tree === 'Alchemy' ? 'green' : null;
+                    if (treeColor && treeColor === m.color) {
+                        matchCount++;
+                    }
+                }
+            });
+            return matchCount;
+        }
+
+        function getMutagenBaseBonus(name) {
+            return getMutagenBonusText(name, 0);
+        }
+
+        function updateMutagenStatsBanner() {
+            let totalAP = 0;
+            let totalSI = 0;
+            let totalVit = 0;
+
+            for (let mId in mutagenSlots) {
+                const m = mutagenSlots[mId];
+                if (m) {
+                    const matchCount = getMutagenMatchCount(mId);
+                    const val = getMutagenBonusValue(m.name, matchCount);
+                    const lowerName = m.name.toLowerCase();
+                    if (lowerName.includes("red")) {
+                        totalAP += val;
+                    } else if (lowerName.includes("blue")) {
+                        totalSI += val;
+                    } else if (lowerName.includes("green")) {
+                        totalVit += val;
+                    }
+                }
+            }
+
+            const parts = [];
+            if (totalAP > 0) parts.push(`+${totalAP}% Attack Power`);
+            if (totalSI > 0) parts.push(`+${totalSI}% Sign Intensity`);
+            if (totalVit > 0) parts.push(`+${totalVit} Vitality`);
+
+            const disp = document.getElementById('mutagen-stats-values');
+            if (disp) {
+                disp.innerText = parts.length > 0 ? parts.join(', ') : 'None';
+            }
+        }
 
         const mutationsData = {
             synapses: { id: "synapses", name: "Strengthened Synapses", color: "white", cost: 0, parents: [], researched: true },
@@ -1158,18 +1293,28 @@
                 }
             });
 
-            document.querySelectorAll('.mutagens-slot-container, .mutagen-slot-container').forEach(slot => {
+            document.querySelectorAll('.mutagen-wrapper').forEach(wrapper => {
+                const slot = wrapper.querySelector('.mutagen-slot-container');
+                const bonusEl = wrapper.querySelector('.mutagen-bonus-text');
                 const mId = slot.getAttribute('data-mutagen-id');
-                if(!mId) return;
+                
+                if (!mId) return;
+
                 const data = mutagenSlots[mId];
                 slot.className = 'mutagen-slot-container';
                 slot.innerHTML = '';
+                bonusEl.innerHTML = '';
+
                 if (data) {
                     slot.classList.add('occupied', `m-color-${data.color}`);
                     const textEl = document.createElement('div');
                     textEl.className = 'mutagen-slotted-text';
                     textEl.innerText = data.name;
                     slot.appendChild(textEl);
+                    
+                    const matchCount = getMutagenMatchCount(mId);
+                    const bonusText = getMutagenBonusText(data.name, matchCount);
+                    bonusEl.innerText = bonusText;
                 }
             });
 
@@ -1217,6 +1362,7 @@
                 coreMutationSlot.classList.add('active-unlocked');
                 coreMutationSlot.innerText = "MUTATION";
             }
+            updateMutagenStatsBanner();
         }
 
         function unslotSkillGlobally(tree, index) {
