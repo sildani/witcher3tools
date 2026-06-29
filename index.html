@@ -860,26 +860,71 @@
             { name: "Lesser Green Mutagen", color: "green" }, { name: "Green Mutagen", color: "green" }, { name: "Greater Green Mutagen", color: "green" }
         ];
 
-        function getMutagenBaseBonus(name) {
+        function getMutagenBonusValue(name, matchCount = 0) {
+            if (!name) return 0;
+            const lowerName = name.toLowerCase();
+            let baseVal = 0;
+            if (lowerName.includes("red")) {
+                baseVal = 7;
+                if (lowerName.includes("lesser")) baseVal = 5;
+                else if (lowerName.includes("greater")) baseVal = 10;
+            } else if (lowerName.includes("blue")) {
+                baseVal = 7;
+                if (lowerName.includes("lesser")) baseVal = 5;
+                else if (lowerName.includes("greater")) baseVal = 10;
+            } else if (lowerName.includes("green")) {
+                baseVal = 100;
+                if (lowerName.includes("lesser")) baseVal = 50;
+                else if (lowerName.includes("greater")) baseVal = 150;
+            }
+            return baseVal * (1 + matchCount);
+        }
+
+        function getMutagenBonusText(name, matchCount = 0) {
             if (!name) return "";
             const lowerName = name.toLowerCase();
+            const val = getMutagenBonusValue(name, matchCount);
             if (lowerName.includes("red")) {
-                let val = "7%";
-                if (lowerName.includes("lesser")) val = "5%";
-                else if (lowerName.includes("greater")) val = "10%";
-                return `+${val} Attack Power`;
+                return `+${val}% Attack Power`;
             } else if (lowerName.includes("blue")) {
-                let val = "7%";
-                if (lowerName.includes("lesser")) val = "5%";
-                else if (lowerName.includes("greater")) val = "10%";
-                return `+${val} Sign Intensity`;
+                return `+${val}% Sign Intensity`;
             } else if (lowerName.includes("green")) {
-                let val = "100";
-                if (lowerName.includes("lesser")) val = "50";
-                else if (lowerName.includes("greater")) val = "150";
                 return `+${val} Vitality`;
             }
             return "";
+        }
+
+        function getMutagenMatchCount(mId) {
+            const m = mutagenSlots[mId];
+            if (!m) return 0;
+            
+            const slotMapping = {
+                1: [1, 2, 3],
+                2: [7, 8, 9],
+                3: [4, 5, 6],
+                4: [10, 11, 12]
+            };
+            
+            const slotsToCheck = slotMapping[mId];
+            if (!slotsToCheck) return 0;
+            
+            let matchCount = 0;
+            slotsToCheck.forEach(slotId => {
+                const skill = characterSlots[slotId];
+                if (skill) {
+                    const treeColor = skill.tree === 'Combat' ? 'red' : 
+                                      skill.tree === 'Signs' ? 'blue' : 
+                                      skill.tree === 'Alchemy' ? 'green' : null;
+                    if (treeColor && treeColor === m.color) {
+                        matchCount++;
+                    }
+                }
+            });
+            return matchCount;
+        }
+
+        function getMutagenBaseBonus(name) {
+            return getMutagenBonusText(name, 0);
         }
 
         function updateMutagenStatsBanner() {
@@ -890,21 +935,14 @@
             for (let mId in mutagenSlots) {
                 const m = mutagenSlots[mId];
                 if (m) {
+                    const matchCount = getMutagenMatchCount(mId);
+                    const val = getMutagenBonusValue(m.name, matchCount);
                     const lowerName = m.name.toLowerCase();
                     if (lowerName.includes("red")) {
-                        let val = 7;
-                        if (lowerName.includes("lesser")) val = 5;
-                        else if (lowerName.includes("greater")) val = 10;
                         totalAP += val;
                     } else if (lowerName.includes("blue")) {
-                        let val = 7;
-                        if (lowerName.includes("lesser")) val = 5;
-                        else if (lowerName.includes("greater")) val = 10;
                         totalSI += val;
                     } else if (lowerName.includes("green")) {
-                        let val = 100;
-                        if (lowerName.includes("lesser")) val = 50;
-                        else if (lowerName.includes("greater")) val = 150;
                         totalVit += val;
                     }
                 }
@@ -1274,7 +1312,8 @@
                     textEl.innerText = data.name;
                     slot.appendChild(textEl);
                     
-                    const bonusText = getMutagenBaseBonus(data.name);
+                    const matchCount = getMutagenMatchCount(mId);
+                    const bonusText = getMutagenBonusText(data.name, matchCount);
                     bonusEl.innerText = bonusText;
                 }
             });
