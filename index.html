@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Witcher 3 Next-Gen Builder</title>
+    <style>
+        :root {
+            --combat-main: #b81d1d;
+            --signs-main: #234199;
+            --alchemy-main: #1a5c25;
+            --general-main: #73501c;
+            --bg-color: #0c0c0c;
+            --panel-bg: rgba(14, 14, 14, 0.95);
+            --text-color: #ffffff;
+            --framework-border: #444;
+        }
+
+        body {
+            font-family: 'Arial Black', Gadget, sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle, #1a1a1a 10%, #050505 100%);
+            color: var(--text-color);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
+        }
+
+        /* Master Workspace Layout Container */
+        .main-workspace {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            width: 100%;
+            max-width: 1120px;
+            align-items: stretch;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 950px) {
+            .main-workspace {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Left Pane Column */
+        .left-pane {
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar Tabs Styling */
+        .tabs-nav {
+            display: flex;
+            width: 100%;
+            background: #111;
+            border: 1px solid #333;
+            margin-bottom: 5px;
+            box-sizing: border-box;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 2px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            font-family: inherit;
+            color: #8c9ba5;
+            background: #1b202e;
+            border: 1px solid #000;
+            cursor: pointer;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .tab-btn[data-tree="Combat"] { background: #2b1414; color: #cc8888; }
+        .tab-btn[data-tree="Combat"].active { background: var(--combat-main); color: #fff; border: 2px solid #ff3333; }
+        .tab-btn[data-tree="Signs"] { background: #141c36; color: #889acc; }
+        .tab-btn[data-tree="Signs"].active { background: var(--signs-main); color: #fff; border: 2px solid #5588ff; }
+        .tab-btn[data-tree="Alchemy"] { background: #112616; color: #7cb887; }
+        .tab-btn[data-tree="Alchemy"].active { background: var(--alchemy-main); color: #fff; border: 2px solid #44ff66; }
+        .tab-btn[data-tree="General"] { background: #261f14; color: #bda37c; }
+        .tab-btn[data-tree="General"].active { background: var(--general-main); color: #fff; border: 2px solid #cca43b; }
+        .tab-btn[data-tree="Mutagens"] { background: #1e1b29; color: #9b8ec4; }
+        .tab-btn[data-tree="Mutagens"].active { background: #5a4980; color: #fff; border: 2px solid #a38fe0; }
+        .tab-btn[data-tree="Mutations"] { background: #1f2726; color: #8ebfae; }
+        .tab-btn[data-tree="Mutations"].active { background: #39524e; color: #fff; border: 2px solid #52ccb6; }
+
+        /* Stats Counter Strip */
+        .stats-banner {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            font-size: 0.95rem;
+            margin: 4px 0 8px 0;
+            padding: 0 4px;
+            font-family: sans-serif;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+            box-sizing: border-box;
+        }
+
+        /* Skill Tree Window Wrapper */
+        .tree-window {
+            width: 100%;
+            background: var(--panel-bg);
+            border: 3px solid #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            box-sizing: border-box;
+            padding: 4px;
+            transition: border-color 0.2s ease;
+            flex-grow: 1;
+        }
+
+        .branch-header {
+            background: #222;
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            font-size: 1.05rem;
+            border: 1px solid #555;
+            letter-spacing: 1px;
+            box-sizing: border-box;
+            text-shadow: 2px 2px 2px #000;
+            transition: all 0.2s ease;
+        }
+
+        .column-labels {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            text-align: center;
+            font-size: 0.68rem;
+            padding: 10px 0;
+            font-family: sans-serif;
+            font-weight: bold;
+            line-height: 1.2;
+            text-shadow: 1px 1px 2px #000;
+            border-bottom: 1px solid #222;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            padding: 6px 2px;
+            position: relative;
+        }
+
+        /* Skill Nodes styling */
+        .skill-node {
+            aspect-ratio: 1 / 1;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.6), 2px 2px 4px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 3px;
+            cursor: pointer;
+            position: relative;
+            box-sizing: border-box;
+            transition: all 0.1s ease;
+        }
+
+        .skill-node.eligible-to-drag { cursor: grab; }
+        .skill-node.eligible-to-drag:active { cursor: grabbing; }
+        .skill-node:not(.locked):active { transform: scale(0.96); }
+
+        .skill-node.maxed {
+            border-color: #ffff55 !important;
+            box-shadow: 0 0 10px rgba(255,255,85,0.4), inset 0 0 8px rgba(0,0,0,0.6);
+        }
+
+        .skill-node.locked {
+            filter: grayscale(0.8) brightness(0.3) !important;
+            border-color: #333 !important;
+            background: #151515 !important;
+            cursor: not-allowed;
+        }
+
+        .skill-node.locked::after {
+            content: "🔒";
+            position: absolute;
+            font-size: 1.1rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 0 4px #000);
+            opacity: 0.85;
+        }
+
+        .skill-name {
+            font-size: 0.65rem;
+            line-height: 1.1;
+            margin-bottom: 4px;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+            word-wrap: break-word;
+            width: 100%;
+        }
+
+        .skill-counter {
+            font-family: sans-serif;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 1px #000;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        /* CONDITIONAL NEW STATE STYLES */
+        .skill-node.eligible-unspent {
+            background: #000000 !important;
+            border: 2px solid #555555 !important;
+            color: #ffffff !important;
+        }
+
+        .skill-node.invested-ununslotted-Combat { background: #000000 !important; border: 2px solid var(--combat-main) !important; }
+        .skill-node.invested-ununslotted-Signs  { background: #000000 !important; border: 2px solid var(--signs-main) !important; }
+        .skill-node.invested-ununslotted-Alchemy { background: #000000 !important; border: 2px solid var(--alchemy-main) !important; }
+        .skill-node.invested-ununslotted-General { background: #000000 !important; border: 2px solid var(--general-main) !important; }
+
+        .skill-node.invested-slotted-Combat { background: linear-gradient(135deg, #a61c1c 0%, #4d0a0a 100%) !important; border: 2px solid #ff2222 !important; }
+        .skill-node.invested-slotted-Signs  { background: linear-gradient(135deg, #1c3b8b 0%, #0a1330 100%) !important; border: 2px solid #3377ff !important; }
+        .skill-node.invested-slotted-Alchemy { background: linear-gradient(135deg, #1a5c25 0%, #081f0b 100%) !important; border: 2px solid #32cd32 !important; }
+        .skill-node.invested-slotted-General { background: linear-gradient(135deg, #73501c 0%, #261b0a 100%) !important; border: 2px solid #cca43b !important; }
+
+        /* Adjusted Mutagen Tab Grid Interface */
+        .mutagen-matrix-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            row-gap: 42px;
+            column-gap: 24px;
+            padding: 35px 20px;
+            justify-items: center;
+            align-items: center;
+        }
+
+        .mutagen-node-diamond {
+            width: 76px;
+            height: 76px;
+            transform: rotate(45deg);
+            border: 2px solid #555;
+            cursor: grab;
+            box-sizing: border-box;
+            position: relative;
+            box-shadow: inset 0 0 12px rgba(0,0,0,0.7), 3px 3px 6px rgba(0,0,0,0.6);
+            transition: transform 0.15s, border-color 0.15s;
+        }
+        .mutagen-node-diamond:active { cursor: grabbing; }
+
+        .mutagen-node-diamond .mutagen-inner-text {
+            transform: rotate(-45deg);
+            position: absolute;
+            width: 106px;
+            height: 106px;
+            top: -15px;
+            left: -15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.62rem;
+            line-height: 1.1;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .m-color-red { background: linear-gradient(135deg, #a61c1c 0%, #4d0a0a 100%) !important; border-color: #ff3333 !important; }
+        .m-color-blue { background: linear-gradient(135deg, #1c3b8b 0%, #0a1330 100%) !important; border-color: #3377ff !important; }
+        .m-color-green { background: linear-gradient(135deg, #1a5c25 0%, #081f0b 100%) !important; border-color: #32cd32 !important; }
+
+        /* Mutations Flow System UI Layout */
+        .mutations-flow-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 15px 10px;
+            align-items: center;
+        }
+
+        .mutation-row {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            width: 100%;
+        }
+
+        .mutation-circle-node {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            border: 3px solid #444;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 2px 2px 6px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+
+        .mutation-circle-node.faded-locked {
+            opacity: 0.25;
+            filter: grayscale(0.9);
+            cursor: not-allowed;
+        }
+
+        .mutation-circle-node.available-to-buy {
+            opacity: 0.65;
+            filter: none;
+            border-color: #777;
+            animation: pulse-border 2s infinite alternate;
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: #555; box-shadow: 0 0 4px rgba(255,255,255,0.1); }
+            100% { border-color: #aaa; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        }
+
+        .mutation-circle-node.researched {
+            opacity: 1 !important;
+            filter: none !important;
+            cursor: grab;
+        }
+        .mutation-circle-node.researched:active { cursor: grabbing; }
+
+        .mutation-circle-node.node-white.researched { background: linear-gradient(135deg, #e0e0e0 0%, #5e5e5e 100%); border-color: #ffffff; box-shadow: 0 0 12px rgba(255,255,255,0.5); }
+        .mutation-circle-node.node-blue.researched { background: linear-gradient(135deg, #234199 0%, #0c183a 100%); border-color: #4488ff; box-shadow: 0 0 12px rgba(68,136,255,0.5); }
+        .mutation-circle-node.node-green.researched { background: linear-gradient(135deg, #1a5c25 0%, #071c0b 100%); border-color: #3be055; box-shadow: 0 0 12px rgba(59,224,85,0.5); }
+        .mutation-circle-node.node-red.researched { background: linear-gradient(135deg, #b81d1d 0%, #420909 100%); border-color: #ff3333; box-shadow: 0 0 12px rgba(255,51,51,0.5); }
+        .mutation-circle-node.node-purple.researched { background: linear-gradient(135deg, #601882 0%, #20052e 100%); border-color: #c15eff; box-shadow: 0 0 12px rgba(193,94,255,0.5); }
+        .mutation-circle-node.node-yellow.researched { background: linear-gradient(135deg, #998317 0%, #302904 100%); border-color: #ffda33; box-shadow: 0 0 12px rgba(255,218,51,0.5); }
+
+        .mutation-node-name {
+            font-size: 0.54rem;
+            line-height: 1.1;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+            padding: 0 4px;
+        }
+
+        .mutation-node-cost {
+            font-family: sans-serif;
+            font-size: 0.58rem;
+            font-weight: bold;
+            color: #ffdd66;
+            text-shadow: 1px 1px 1px #000;
+            margin-top: 2px;
+        }
+
+        /* Right Pane: Character Loadout Panel */
+        .framework-window {
+            flex: 1;
+            width: 100%;
+            max-width: 580px;
+            background: var(--panel-bg);
+            border: 3px solid #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            box-sizing: border-box;
+            background-image: radial-gradient(circle, #151515 20%, #080808 100%);
+            
+            display: grid;
+            grid-template-columns: 85px 1fr 65px 1fr 85px;
+            padding: 20px 10px;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .left-diamonds, .right-diamonds {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            height: 85%;
+            width: 100%;
+            align-items: center;
+        }
+
+        .left-slots, .right-slots {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 94%;
+            gap: 10px;
+        }
+
+        .center-column-stack {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 94%;
+            width: 100%;
+            gap: 4px;
+        }
+
+        /* Framework Item Slots styling */
+        .fw-slot {
+            width: 82px;
+            height: 82px;
+            background: rgba(20, 20, 20, 0.8);
+            border: 2px solid var(--framework-border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.3rem;
+            color: #555;
+            position: relative;
+            cursor: pointer;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+            transition: all 0.2s;
+        }
+
+        .fw-slot.drag-hover {
+            border-color: #fff;
+            background: rgba(50, 50, 50, 0.9);
+        }
+
+        .fw-slot.occupied {
+            font-size: 0.65rem;
+            color: #fff;
+            text-align: center;
+            padding: 6px;
+            font-family: 'Arial Black', sans-serif;
+            border-width: 2px;
+        }
+
+        /* Central Hidden/Lockable Mutation Slots */
+        .fw-slot.mutation-dependent-slot {
+            width: 58px;
+            height: 58px;
+            border-radius: 4px;
+            font-size: 0.52rem;
+            background: rgba(12, 12, 12, 0.9);
+            border: 1px dashed #444;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            font-weight: normal;
+        }
+
+        .fw-slot.mutation-dependent-slot.central-locked {
+            border: 1px solid #222;
+            background: #080808;
+            opacity: 0.35;
+            cursor: not-allowed;
+            color: #555;
+        }
+
+        /* Inactive due to missing mutation slot placement */
+        .fw-slot.mutation-dependent-slot.central-inactive {
+            border: 1px dashed #cc3333;
+            background: rgba(20, 10, 10, 0.8);
+            color: #ff5555;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .fw-slot.mutation-dependent-slot.central-unlocked {
+            opacity: 1;
+            border: 1px dashed #52ccb6;
+            background: rgba(20, 30, 28, 0.8);
+            color: #a5b9c7;
+            cursor: pointer;
+        }
+
+        /* Dynamic Visual Cue Overrides for Allowed Mutation Archetypes */
+        .fw-slot.mutation-dependent-slot.cue-blue   { border: 2px dashed #3377ff; color: #88aaff; background: rgba(10, 15, 35, 0.8); }
+        .fw-slot.mutation-dependent-slot.cue-red    { border: 2px dashed #ff3333; color: #ff8888; background: rgba(35, 10, 10, 0.8); }
+        .fw-slot.mutation-dependent-slot.cue-green  { border: 2px dashed #32cd32; color: #88ff88; background: rgba(10, 35, 15, 0.8); }
+        .fw-slot.mutation-dependent-slot.cue-purple { border: 2px dashed #c15eff; color: #e0b3ff; background: rgba(25, 10, 35, 0.8); }
+        .fw-slot.mutation-dependent-slot.cue-yellow { border: 2px dashed #ffda33; color: #ffeaa0; background: rgba(30, 25, 10, 0.8); }
+        .fw-slot.mutation-dependent-slot.cue-white  { border: 2px dashed #ffffff; color: #ffffff; background: rgba(30, 30, 30, 0.8); }
+
+        .fw-slot.mutation-dependent-slot.central-unlocked.occupied {
+            font-size: 0.55rem;
+            padding: 4px;
+            border-style: solid;
+            color: #ffffff !important;
+            font-weight: bold;
+        }
+
+        /* Active Slotted Mutagen Target Framework Nodes */
+        .mutagen-slot-container {
+            width: 64px;
+            height: 64px;
+            border: 2px solid var(--framework-border);
+            background: rgba(15, 15, 15, 0.9);
+            transform: rotate(45deg);
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.8);
+            position: relative;
+        }
+        .mutagen-slot-container.drag-hover {
+            border-color: #fff;
+            background: rgba(60, 60, 60, 0.95);
+        }
+        .mutagen-slot-container.occupied {
+            border-width: 2px;
+            box-shadow: 0 0 12px rgba(255,255,255,0.15), inset 0 0 8px rgba(0,0,0,0.6);
+        }
+        
+        .mutagen-slot-container.occupied.m-color-red { box-shadow: 0 0 10px rgba(184,29,29,0.6), inset 0 0 8px rgba(0,0,0,0.6); }
+        .mutagen-slot-container.occupied.m-color-blue { box-shadow: 0 0 10px rgba(35,65,153,0.6), inset 0 0 8px rgba(0,0,0,0.6); }
+        .mutagen-slot-container.occupied.m-color-green { box-shadow: 0 0 10px rgba(26,92,37,0.6), inset 0 0 8px rgba(0,0,0,0.6); }
+
+        .mutagen-slot-container .mutagen-slotted-text {
+            transform: rotate(-45deg);
+            position: absolute;
+            width: 84px;
+            height: 84px;
+            top: -12px;
+            left: -12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.58rem;
+            line-height: 1.1;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+            padding: 4px;
+            box-sizing: border-box;
+            font-family: 'Arial Black', sans-serif;
+        }
+
+        /* Central Assembly Core Circle */
+        .mutation-center-circle {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            border: 2px solid var(--framework-border);
+            background: rgba(10, 10, 10, 0.8);
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.9);
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.58rem;
+            color: #444;
+            cursor: pointer;
+            padding: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .mutation-center-circle.active-unlocked {
+            border-color: #52ccb6;
+            color: #8c9ba5;
+        }
+
+        .mutation-center-circle.drag-hover {
+            border-color: #fff;
+            background: rgba(40, 60, 55, 0.9);
+        }
+
+        .mutation-center-circle.slotted {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        /* Center Circle Slotted Mutation Theme overrides */
+        .mutation-center-circle.slot-theme-white { background: linear-gradient(135deg, #e0e0e0 0%, #444 100%); border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.4); }
+        .mutation-center-circle.slot-theme-blue { background: linear-gradient(135deg, #234199 0%, #0c183a 100%); border-color: #4488ff; box-shadow: 0 0 10px rgba(68,136,255,0.4); }
+        .mutation-center-circle.slot-theme-green { background: linear-gradient(135deg, #1a5c25 0%, #071c0b 100%); border-color: #3be055; box-shadow: 0 0 10px rgba(59,224,85,0.4); }
+        .mutation-center-circle.slot-theme-red { background: linear-gradient(135deg, #b81d1d 0%, #420909 100%); border-color: #ff3333; box-shadow: 0 0 10px rgba(255,51,51,0.4); }
+        .mutation-center-circle.slot-theme-purple { background: linear-gradient(135deg, #601882 0%, #20052e 100%); border-color: #c15eff; box-shadow: 0 0 10px rgba(193,94,255,0.4); }
+        .mutation-center-circle.slot-theme-yellow { background: linear-gradient(135deg, #998317 0%, #302904 100%); border-color: #ffda33; box-shadow: 0 0 10px rgba(255,218,51,0.4); }
+
+        /* Dynamic Tree Slot Slotted Themes Color Matrix overrides */
+        .fw-slot.slotted-Combat  { background: linear-gradient(135deg, #a61c1c 0%, #4d0a0a 100%) !important; border-color: #ff2222 !important; box-shadow: 0 0 8px rgba(184,29,29,0.5); }
+        .fw-slot.slotted-Signs   { background: linear-gradient(135deg, #1c3b8b 0%, #0a1330 100%) !important; border-color: #3377ff !important; box-shadow: 0 0 8px rgba(35,65,153,0.5); }
+        .fw-slot.slotted-Alchemy { background: linear-gradient(135deg, #1a5c25 0%, #081f0b 100%) !important; border-color: #32cd32 !important; box-shadow: 0 0 8px rgba(26,92,37,0.5); }
+        .fw-slot.slotted-General { background: linear-gradient(135deg, #73501c 0%, #261b0a 100%) !important; border-color: #cca43b !important; box-shadow: 0 0 8px rgba(115,80,28,0.5); }
+
+        /* Bottom Controls Row Utility */
+        .footer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 1120px;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            flex: 1;
+            max-width: 130px;
+            background: linear-gradient(180deg, #2b2b2b 0%, #171717 100%);
+            color: #aa9a9a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            font-weight: bold;
+            font-family: sans-serif;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .action-btn:hover { color: #ccc; border-color: #666; }
+
+        /* Standard Main Window Frame Themes borders */
+        .tree-window.theme-combat { border-color: #6b1111; }
+        .tree-window.theme-combat .branch-header { background: linear-gradient(180deg, var(--combat-main) 0%, #520c0c 100%); border-color: #ff4444; }
+
+        .tree-window.theme-signs { border-color: #112252; }
+        .tree-window.theme-signs .branch-header { background: linear-gradient(180deg, #1c3b8b 0%, #0d1a40 100%); border-color: #4488ff; }
+
+        .tree-window.theme-alchemy { border-color: #113817; }
+        .tree-window.theme-alchemy .branch-header { background: linear-gradient(180deg, var(--alchemy-main) 0%, #0b240e 100%); border-color: #3be055; }
+
+        .tree-window.theme-general { border-color: #473212; }
+        .tree-window.theme-general .branch-header { background: linear-gradient(180deg, var(--general-main) 0%, #211606 100%); border-color: #cca43b; }
+
+        .tree-window.theme-mutagens { border-color: #42385c; }
+        .tree-window.theme-mutagens .branch-header { background: linear-gradient(180deg, #4c3c6e 0%, #191424 100%); border-color: #907cb5; }
+
+        .tree-window.theme-mutations { border-color: #243d39; }
+        .tree-window.theme-mutations .branch-header { background: linear-gradient(180deg, #32544e 0%, #111f1c 100%); border-color: #52ccb6; }
+
+        /* Modal Overlays Layout */
+        .export-modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .export-modal-box {
+            background: #151515;
+            border: 2px solid #52ccb6;
+            padding: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .export-title {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: #52ccb6;
+            margin-bottom: 12px;
+        }
+
+        .export-url-input {
+            width: 100%;
+            background: #0a0a0a;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px;
+            font-size: 0.8rem;
+            box-sizing: border-box;
+            border-radius: 3px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .modal-actions-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            background: #252525;
+            border: 1px solid #555;
+            color: #ccc;
+            padding: 6px 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 3px;
+        }
+        .modal-btn:hover { background: #333; color: #fff; }
+        .modal-btn.primary-action { background: #1c4d44; border-color: #52ccb6; color: #fff; }
+        .modal-btn.primary-action:hover { background: #266b5e; }
+    </style>
+</head>
+<body>
+
+    <div class="main-workspace">
+        <div class="left-pane">
+            <div class="tabs-nav">
+                <button class="tab-btn active" data-tree="Combat">Combat<br>Skills</button>
+                <button class="tab-btn" data-tree="Signs">Signs<br>Skills</button>
+                <button class="tab-btn" data-tree="Alchemy">Alchemy<br>Skills</button>
+                <button class="tab-btn" data-tree="General">General<br>Skills</button>
+                <button class="tab-btn" data-tree="Mutagens">Mutagens</button>
+                <button class="tab-btn" data-tree="Mutations">Mutations</button>
+            </div>
+
+            <div class="stats-banner">
+                <div>Total Points Allocated: <span id="total-points">0</span></div>
+                <div>Total Unslotted: <span id="unslotted-count">0</span></div>
+            </div>
+
+            <div class="tree-window theme-combat" id="window-frame">
+                <div class="branch-header">
+                    <span id="branch-title">COMBAT</span>
+                    <span id="branch-points-container">POINTS IN BRANCH: <span id="branch-points">0</span></span>
+                </div>
+
+                <div class="column-labels" id="column-labels-frame">
+                    <div>Fast<br>Attack</div>
+                    <div>Strong<br>Attack</div>
+                    <div>Defense</div>
+                    <div>Marksmanship</div>
+                    <div>Battle<br>Trance</div>
+                </div>
+
+                <div class="grid-container" id="grid-root"></div>
+            </div>
+        </div>
+
+        <div class="framework-window" id="framework-container">
+            <div class="left-diamonds">
+                <div class="mutagen-slot-container" data-mutagen-id="1"></div>
+                <div class="mutagen-slot-container" data-mutagen-id="2"></div>
+            </div>
+
+            <div class="left-slots">
+                <div class="fw-slot" data-slot-id="1">1</div>
+                <div class="fw-slot" data-slot-id="2">2</div>
+                <div class="fw-slot" data-slot-id="3">3</div>
+                <div class="fw-slot" data-slot-id="7">7</div>
+                <div class="fw-slot" data-slot-id="8">8</div>
+                <div class="fw-slot" data-slot-id="9">9</div>
+            </div>
+
+            <div class="center-column-stack">
+                <div class="fw-slot mutation-dependent-slot central-locked" data-center-slot-id="1" data-req-mutations="2">🔒<br>2 Mut</div>
+                <div class="fw-slot mutation-dependent-slot central-locked" data-center-slot-id="2" data-req-mutations="4">🔒<br>4 Mut</div>
+                <div class="mutation-center-circle" id="core-mutation-slot">MUTATION</div>
+                <div class="fw-slot mutation-dependent-slot central-locked" data-center-slot-id="3" data-req-mutations="8">🔒<br>8 Mut</div>
+                <div class="fw-slot mutation-dependent-slot central-locked" data-center-slot-id="4" data-req-mutations="12">🔒<br>12 Mut</div>
+            </div>
+
+            <div class="right-slots">
+                <div class="fw-slot" data-slot-id="4">4</div>
+                <div class="fw-slot" data-slot-id="5">5</div>
+                <div class="fw-slot" data-slot-id="6">6</div>
+                <div class="fw-slot" data-slot-id="10">10</div>
+                <div class="fw-slot" data-slot-id="11">11</div>
+                <div class="fw-slot" data-slot-id="12">12</div>
+            </div>
+
+            <div class="right-diamonds">
+                <div class="mutagen-slot-container" data-mutagen-id="3"></div>
+                <div class="mutagen-slot-container" data-mutagen-id="4"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-controls">
+        <button class="action-btn" id="reset-tree-btn">Reset Tree</button>
+        <button class="action-btn" id="reset-all-btn">Reset All</button>
+        <button class="action-btn" id="export-build-btn">Export</button>
+    </div>
+
+    <div class="export-modal-backdrop" id="export-modal">
+        <div class="export-modal-box">
+            <h3 class="export-title">BUILD EXPORTED</h3>
+            <input type="text" class="export-url-input" id="export-url-field" readonly>
+            <div class="modal-actions-row">
+                <button class="modal-btn primary-action" id="copy-url-btn">Copy Link</button>
+                <button class="modal-btn" id="close-modal-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const skillTrees = {
+            Combat: [
+                { name: "Muscle Memory", max: 3, req: 0 }, { name: "Strength Training", max: 3, req: 0 }, { name: "Arrow Deflection", max: 2, req: 0 }, { name: "Lightning Reflexes", max: 3, req: 0 }, { name: "Resolve", max: 3, req: 0 },
+                { name: "Precise Blows", max: 3, req: 6 }, { name: "Crushing Blows", max: 3, req: 6 }, { name: "Fleet Footed", max: 3, req: 6 }, { name: "Cold Blood", max: 3, req: 6 }, { name: "Undying", max: 3, req: 6 },
+                { name: "Whirl", max: 3, req: 12 }, { name: "Rend", max: 3, req: 12 }, { name: "Counter Attack", max: 3, req: 12 }, { name: "Anatomical Knowledge", max: 3, req: 12 }, { name: "Razor Focus", max: 3, req: 12 },
+                { name: "Crippling Strikes", max: 3, req: 18 }, { name: "Sunder Armor", max: 3, req: 18 }, { name: "Deadly Precision", max: 2, req: 18 }, { name: "Crippling Shot", max: 3, req: 18 }, { name: "Flood of Anger", max: 3, req: 18 }
+            ],
+            Signs: [
+                { name: "Far-reaching Aard", max: 3, req: 0 }, { name: "Melt Armor", max: 3, req: 0 }, { name: "Sustained Glyphs", max: 2, req: 0 }, { name: "Exploding Shield", max: 3, req: 0 }, { name: "Delusion", max: 3, req: 0 },
+                { name: "Aard Sweep", max: 3, req: 6 }, { name: "Firestream", max: 3, req: 6 }, { name: "Magic Trap", max: 3, req: 6 }, { name: "Active Shield", max: 3, req: 6 }, { name: "Puppet", max: 3, req: 6 },
+                { name: "Shock Wave", max: 3, req: 12 }, { name: "Pyromaniac", max: 3, req: 12 }, { name: "Supercharged Glyphs", max: 3, req: 12 }, { name: "Quen Discharge", max: 3, req: 12 }, { name: "Domination", max: 3, req: 12 },
+                { name: "Intensity: Aard", max: 3, req: 18 }, { name: "Intensity: Igni", max: 3, req: 18 }, { name: "Intensity: Yrden", max: 3, req: 18 }, { name: "Intensity: Quen", max: 3, req: 18 }, { name: "Intensity: Axii", max: 3, req: 18 }
+            ],
+            Alchemy: [
+                { name: "Heightened Tolerance", max: 3, req: 0 }, { name: "Poisoned Blades", max: 3, req: 0 }, { name: "Steady Aim", max: 3, req: 0 }, { name: "Acquired Tolerance", max: 3, req: 0 }, { name: "Frenzy", max: 3, req: 0 },
+                { name: "Refreshment", max: 3, req: 6 }, { name: "Protective Coating", max: 3, req: 6 }, { name: "Pyrotechnics", max: 3, req: 6 }, { name: "Tissue Transmutation", max: 3, req: 6 }, { name: "Endure Pain", max: 3, req: 6 },
+                { name: "Delayed Recovery", max: 3, req: 12 }, { name: "Fixative", max: 3, req: 12 }, { name: "Efficiency", max: 3, req: 12 }, { name: "Synergy", max: 3, req: 12 }, { name: "Fast Metabolism", max: 3, req: 12 },
+                { name: "Side Effects", max: 3, req: 18 }, { name: "Hunter Instinct", max: 3, req: 18 }, { name: "Cluster Bombs", max: 3, req: 18 }, { name: "Adaptation", max: 3, req: 18 }, { name: "Killing Spree", max: 3, req: 18 }
+            ],
+            General: [
+                { name: "Sun and Stars", max: 1, req: 0 }, { name: "Survival Instinct", max: 1, req: 0 }, { name: "Cat School Techniques", max: 1, req: 0 }, { name: "Griffin School Techniques", max: 1, req: 0 }, { name: "Bear School Techniques", max: 1, req: 0 },
+                { name: "Steady Shot", max: 1, req: 0 }, { name: "Rage Management", max: 1, req: 0 }, { name: "Focus", max: 1, req: 0 }, { name: "Adrenaline Burst", max: 1, req: 0 }, { name: "Metabolism Control", max: 1, req: 0 },
+                { name: "Metabolism Boost", max: 1, req: 0 }, { name: "Trick Shot", max: 1, req: 0 }, { name: "Advanced Pyrotechnics", max: 1, req: 0 }, { name: "Battle Frenzy", max: 1, req: 0 }, { name: "Strong Back", max: 1, req: 0 },
+                { name: "Gorged On Power", max: 1, req: 0 }, { name: "Gourmet", max: 1, req: 0 }, { name: "In Combat's Fires", max: 1, req: 0 }, { name: "Heavy Artillery", max: 1, req: 0 }, { name: "Attack Is The Best Defense", max: 1, req: 0 }
+            ]
+        };
+
+        const mutagensList = [
+            { name: "Lesser Red Mutagen", color: "red" }, { name: "Red Mutagen", color: "red" }, { name: "Greater Red Mutagen", color: "red" },
+            { name: "Lesser Blue Mutagen", color: "blue" }, { name: "Blue Mutagen", color: "blue" }, { name: "Greater Blue Mutagen", color: "blue" },
+            { name: "Lesser Green Mutagen", color: "green" }, { name: "Green Mutagen", color: "green" }, { name: "Greater Green Mutagen", color: "green" }
+        ];
+
+        const mutationsData = {
+            synapses: { id: "synapses", name: "Strengthened Synapses", color: "white", cost: 0, parents: [], researched: true },
+            sensibilities: { id: "sensibilities", name: "Magic Sensibilities", color: "blue", cost: 2, parents: ["synapses"], researched: false },
+            piercing: { id: "piercing", name: "Piercing Cold", color: "blue", cost: 3, parents: ["sensibilities"], researched: false },
+            conductors: { id: "conductors", name: "Conductors of Magic", color: "purple", cost: 5, parents: ["piercing"], researched: false },
+            toxic: { id: "toxic", name: "Toxic Blood", color: "green", cost: 2, parents: ["synapses"], researched: false },
+            euphoria: { id: "euphoria", name: "Euphoria", color: "green", cost: 3, parents: ["toxic"], researched: false },
+            skin: { id: "skin", name: "Mutated Skin", color: "yellow", cost: 5, parents: ["euphoria"], researched: false },
+            counter: { id: "counter", name: "Deadly Counter", color: "red", cost: 2, parents: ["synapses"], researched: false },
+            bloodbath: { id: "bloodbath", name: "Bloodbath", color: "red", cost: 3, parents: ["counter"], researched: false },
+            adrenaline: { id: "adrenaline", name: "Adrenaline Rush", color: "purple", cost: 5, parents: ["bloodbath", "piercing"], researched: false },
+            cateyes: { id: "cateyes", name: "Cat Eyes", color: "yellow", cost: 5, parents: ["bloodbath", "euphoria"], researched: false },
+            secondlife: { id: "secondlife", name: "Second Life", color: "white", cost: 7, parents: ["adrenaline"], researched: false },
+            metamorphosis: { id: "metamorphosis", name: "Metamorphosis", color: "white", cost: 7, parents: ["cateyes"], researched: false }
+        };
+
+        const treeKeysOrder = ["Combat", "Signs", "Alchemy", "General"];
+        const mutationKeysOrder = [
+            "sensibilities", "piercing", "conductors", "toxic", "euphoria", 
+            "skin", "counter", "bloodbath", "adrenaline", "cateyes", "secondlife", "metamorphosis"
+        ];
+
+        const combatLabels = ["Fast<br>Attack", "Strong<br>Attack", "Defense", "Marksmanship", "Battle<br>Trance"];
+        const signLabels = ["Aard", "Igni", "Yrden", "Quen", "Axii"];
+        const alchemyLabels = ["Potions", "Oils", "Bombs", "Mutagens", "Trial of<br>Grasses"];
+        const generalLabels = ["Utility", "Stats", "Gear", "Combat Spec", "Alchemy Spec"];
+
+        let currentTree = "Combat";
+        let allocatedPoints = { Combat: new Array(20).fill(0), Signs: new Array(20).fill(0), Alchemy: new Array(20).fill(0), General: new Array(20).fill(0) };
+        let characterSlots = {};
+        for(let i=1; i<=12; i++) { characterSlots[i] = null; }
+        
+        let centralMutationSlots = { 1: null, 2: null, 3: null, 4: null };
+        let mutagenSlots = { 1: null, 2: null, 3: null, 4: null };
+        let slottedMutation = null;
+
+        const gridRoot = document.getElementById('grid-root');
+        const windowFrame = document.getElementById('window-frame');
+        const branchTitle = document.getElementById('branch-title');
+        const branchPointsDisp = document.getElementById('branch-points');
+        const branchPointsContainer = document.getElementById('branch-points-container');
+        const totalPointsDisp = document.getElementById('total-points');
+        const unslottedCountDisp = document.getElementById('unslotted-count');
+        const columnLabelsFrame = document.getElementById('column-labels-frame');
+        const coreMutationSlot = document.getElementById('core-mutation-slot');
+
+        function checkIsSlotted(tree, index) {
+            for (let sId in characterSlots) {
+                if (characterSlots[sId] && characterSlots[sId].tree === tree && characterSlots[sId].index === index) {
+                    return true;
+                }
+            }
+            for (let cId in centralMutationSlots) {
+                if (centralMutationSlots[cId] && centralMutationSlots[cId].tree === tree && centralMutationSlots[cId].index === index) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function isSkillAllowedInCentralSlot(skillTree, mutationColor) {
+            if (!mutationColor) return false;
+            switch(mutationColor.toLowerCase()) {
+                case 'blue':   return skillTree === 'Signs';
+                case 'red':    return skillTree === 'Combat';
+                case 'green':  return skillTree === 'Alchemy';
+                case 'purple': return skillTree === 'Combat' || skillTree === 'Signs';
+                case 'yellow': return skillTree === 'Alchemy' || skillTree === 'Signs';
+                case 'white':  return skillTree === 'Combat' || skillTree === 'Alchemy' || skillTree === 'Signs';
+                default:       return false;
+            }
+        }
+
+        function getCentralSlotCueText(mutationColor) {
+            if (!mutationColor) return "Inactive";
+            switch(mutationColor.toLowerCase()) {
+                case 'blue':   return "Signs<br>Only";
+                case 'red':    return "Combat<br>Only";
+                case 'green':  return "Alchemy<br>Only";
+                case 'purple': return "Combat<br>/ Signs";
+                case 'yellow': return "Alchemy<br>/ Signs";
+                case 'white':  return "Combat/Sign<br>/Alchemy";
+                default:       return "Open";
+            }
+        }
+
+        function renderGrid() {
+            gridRoot.innerHTML = '';
+            
+            if (currentTree === "Mutagens") {
+                columnLabelsFrame.style.display = 'none';
+                branchPointsContainer.style.display = 'none';
+                gridRoot.className = "mutagen-matrix-grid";
+                
+                mutagensList.forEach((mutagen) => {
+                    const node = document.createElement('div');
+                    node.className = `mutagen-node-diamond m-color-${mutagen.color}`;
+                    node.setAttribute('draggable', 'true');
+                    
+                    const textInner = document.createElement('div');
+                    textInner.className = 'mutagen-inner-text';
+                    textInner.innerText = mutagen.name;
+                    node.appendChild(textInner);
+
+                    node.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', JSON.stringify({
+                            type: 'mutagen',
+                            name: mutagen.name,
+                            color: mutagen.color
+                        }));
+                    });
+                    gridRoot.appendChild(node);
+                });
+                return;
+            }
+
+            if (currentTree === "Mutations") {
+                columnLabelsFrame.style.display = 'none';
+                branchPointsContainer.style.display = 'none';
+                gridRoot.className = "mutations-flow-layout";
+
+                const rowsData = [
+                    ["synapses"],
+                    ["sensibilities", "toxic", "counter"],
+                    ["piercing", "euphoria", "bloodbath"],
+                    ["conductors", "skin"],
+                    ["adrenaline", "cateyes"],
+                    ["secondlife", "metamorphosis"]
+                ];
+
+                rowsData.forEach(rowKeys => {
+                    const rowContainer = document.createElement('div');
+                    rowContainer.className = "mutation-row";
+
+                    rowKeys.forEach(key => {
+                        const mData = mutationsData[key];
+                        const circ = document.createElement('div');
+                        circ.className = `mutation-circle-node node-${mData.color}`;
+                        
+                        let parentsMet = mData.parents.length > 0 && mData.parents.every(pKey => mutationsData[pKey].researched);
+                        
+                        if (mData.researched) {
+                            circ.classList.add('researched');
+                            if (mData.id !== "synapses") circ.setAttribute('draggable', 'true');
+                        } else if (parentsMet) {
+                            circ.classList.add('available-to-buy');
+                        } else {
+                            circ.classList.add('faded-locked');
+                        }
+
+                        const labelName = document.createElement('div');
+                        labelName.className = "mutation-node-name";
+                        labelName.innerText = mData.name;
+                        circ.appendChild(labelName);
+
+                        if (!mData.researched && mData.cost > 0) {
+                            const labelCost = document.createElement('div');
+                            labelCost.className = "mutation-node-cost";
+                            labelCost.innerText = `${mData.cost} AP`;
+                            circ.appendChild(labelCost);
+                        }
+
+                        circ.addEventListener('click', () => {
+                            if (circ.classList.contains('available-to-buy')) {
+                                mData.researched = true;
+                                updateTotals();
+                            }
+                        });
+
+                        circ.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            if (!mData.researched || mData.id === "synapses") return;
+
+                            let blockRemoval = false;
+                            Object.values(mutationsData).forEach(child => {
+                                if (child.researched && child.parents.includes(mData.id)) {
+                                    let structuralParentsResearchedCount = child.parents.filter(p => mutationsData[p].researched).length;
+                                    if (structuralParentsResearchedCount <= 1 || child.parents.every(p => p === mData.id)) {
+                                        blockRemoval = true;
+                                    }
+                                }
+                            });
+
+                            if (!blockRemoval) {
+                                mData.researched = false;
+                                if (slottedMutation && slottedMutation.id === mData.id) {
+                                    slottedMutation = null;
+                                    for (let cId in centralMutationSlots) { centralMutationSlots[cId] = null; }
+                                }
+                                updateTotals();
+                            }
+                        });
+
+                        circ.addEventListener('dragstart', (e) => {
+                            if (!mData.researched || mData.id === "synapses") return;
+                            e.dataTransfer.setData('text/plain', JSON.stringify({
+                                type: 'mutation',
+                                id: mData.id,
+                                name: mData.name,
+                                color: mData.color
+                            }));
+                        });
+
+                        rowContainer.appendChild(circ);
+                    });
+                    gridRoot.appendChild(rowContainer);
+                });
+                return;
+            }
+
+            columnLabelsFrame.style.display = 'grid';
+            branchPointsContainer.style.display = 'inline';
+            gridRoot.className = "grid-container";
+
+            const activeSkills = skillTrees[currentTree];
+            const activeAllocations = allocatedPoints[currentTree];
+            const branchTotal = activeAllocations.reduce((a, b) => a + b, 0);
+
+            activeSkills.forEach((skill, index) => {
+                const node = document.createElement('div');
+                node.className = 'skill-node';
+                
+                const isLocked = branchTotal < skill.req;
+                const count = activeAllocations[index];
+
+                if (isLocked) {
+                    node.classList.add('locked');
+                } else {
+                    if (count === 0) {
+                        node.classList.add('eligible-unspent');
+                    } else {
+                        const isSlotted = checkIsSlotted(currentTree, index);
+                        if (isSlotted) {
+                            node.classList.add(`invested-slotted-${currentTree}`);
+                        } else {
+                            node.classList.add(`invested-ununslotted-${currentTree}`);
+                        }
+                    }
+                }
+
+                if (count === skill.max) node.classList.add('maxed');
+
+                if (!isLocked && count > 0) {
+                    node.setAttribute('draggable', 'true');
+                    node.classList.add('eligible-to-drag');
+                }
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'skill-name';
+                nameEl.innerText = skill.name;
+
+                const counterEl = document.createElement('div');
+                counterEl.className = 'skill-counter';
+                counterEl.innerText = `${count}/${skill.max}`;
+
+                node.appendChild(nameEl);
+                node.appendChild(counterEl);
+
+                node.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (isLocked) return;
+                    if (activeAllocations[index] < skill.max) {
+                        activeAllocations[index]++;
+                        updateTotals();
+                    }
+                });
+
+                node.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    if (isLocked) return;
+
+                    if (activeAllocations[index] > 0) {
+                        activeAllocations[index]--;
+                        const prospectiveTotal = activeAllocations.reduce((a, b) => a + b, 0);
+                        
+                        let violatesDependency = false;
+                        for (let i = 0; i < activeSkills.length; i++) {
+                            if (activeAllocations[i] > 0 && prospectiveTotal < activeSkills[i].req) {
+                                violatesDependency = true;
+                                break;
+                            }
+                        }
+
+                        if (activeAllocations[index] === 0) {
+                            unslotSkillGlobally(currentTree, index);
+                        }
+
+                        if (violatesDependency) {
+                            activeAllocations[index]++; 
+                        } else {
+                            updateTotals();
+                        }
+                    }
+                });
+
+                node.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({
+                        type: 'skill',
+                        tree: currentTree,
+                        index: index,
+                        name: skill.name
+                    }));
+                });
+
+                gridRoot.appendChild(node);
+            });
+        }
+
+        function syncFrameworkSlots() {
+            let totalUnslottedAbilitiesCount = 0;
+            
+            Object.keys(allocatedPoints).forEach(treeKey => {
+                allocatedPoints[treeKey].forEach((pts, idx) => {
+                    if (pts > 0) {
+                        if (!checkIsSlotted(treeKey, idx)) {
+                            totalUnslottedAbilitiesCount++;
+                        }
+                    }
+                });
+            });
+            unslottedCountDisp.innerText = totalUnslottedAbilitiesCount;
+
+            document.querySelectorAll('.fw-slot:not(.mutation-dependent-slot)').forEach(slot => {
+                const sId = slot.getAttribute('data-slot-id');
+                const data = characterSlots[sId];
+                slot.className = 'fw-slot';
+                if (data) {
+                    slot.classList.add('occupied', `slotted-${data.tree}`);
+                    slot.innerText = data.name;
+                } else {
+                    slot.innerText = sId;
+                }
+            });
+
+            document.querySelectorAll('.mutagens-slot-container, .mutagen-slot-container').forEach(slot => {
+                const mId = slot.getAttribute('data-mutagen-id');
+                if(!mId) return;
+                const data = mutagenSlots[mId];
+                slot.className = 'mutagen-slot-container';
+                slot.innerHTML = '';
+                if (data) {
+                    slot.classList.add('occupied', `m-color-${data.color}`);
+                    const textEl = document.createElement('div');
+                    textEl.className = 'mutagen-slotted-text';
+                    textEl.innerText = data.name;
+                    slot.appendChild(textEl);
+                }
+            });
+
+            const mutationsResearchedCount = Object.values(mutationsData).filter(m => m.researched && m.id !== "synapses").length;
+
+            document.querySelectorAll('.mutation-dependent-slot').forEach(slot => {
+                const cId = slot.getAttribute('data-center-slot-id');
+                const reqValue = parseInt(slot.getAttribute('data-req-mutations'), 10);
+                const data = centralMutationSlots[cId];
+
+                slot.className = 'fw-slot mutation-dependent-slot';
+                
+                if (mutationsResearchedCount >= reqValue) {
+                    if (slottedMutation) {
+                        slot.classList.add('central-unlocked', `cue-${slottedMutation.color}`);
+                        
+                        if (data) {
+                            if (!isSkillAllowedInCentralSlot(data.tree, slottedMutation.color)) {
+                                centralMutationSlots[cId] = null;
+                                slot.innerHTML = getCentralSlotCueText(slottedMutation.color);
+                            } else {
+                                slot.classList.add('occupied', `slotted-${data.tree}`);
+                                slot.innerText = data.name;
+                            }
+                        } else {
+                            slot.innerHTML = getCentralSlotCueText(slottedMutation.color);
+                        }
+                    } else {
+                        slot.classList.add('central-inactive');
+                        slot.innerHTML = "Inactive<br>(No Mut)";
+                        centralMutationSlots[cId] = null;
+                    }
+                } else {
+                    slot.classList.add('central-locked');
+                    slot.innerHTML = `🔒<br>${reqValue} Mut`;
+                    centralMutationSlots[cId] = null;
+                }
+            });
+
+            coreMutationSlot.className = "mutation-center-circle";
+            if (slottedMutation) {
+                coreMutationSlot.classList.add('slotted', `slot-theme-${slottedMutation.color}`);
+                coreMutationSlot.innerText = slottedMutation.name;
+            } else {
+                coreMutationSlot.classList.add('active-unlocked');
+                coreMutationSlot.innerText = "MUTATION";
+            }
+        }
+
+        function unslotSkillGlobally(tree, index) {
+            for (let sId in characterSlots) {
+                if (characterSlots[sId] && characterSlots[sId].tree === tree && characterSlots[sId].index === index) {
+                    characterSlots[sId] = null;
+                }
+            }
+            for (let cId in centralMutationSlots) {
+                if (centralMutationSlots[cId] && centralMutationSlots[cId].tree === tree && centralMutationSlots[cId].index === index) {
+                    centralMutationSlots[cId] = null;
+                }
+            }
+        }
+
+        function updateTotals() {
+            if (currentTree !== "Mutagens" && currentTree !== "Mutations") {
+                const currentBranchTotal = allocatedPoints[currentTree].reduce((a, b) => a + b, 0);
+                branchPointsDisp.innerText = currentBranchTotal;
+            }
+
+            let skillSum = Object.values(allocatedPoints).reduce((acc, arr) => acc + arr.reduce((a, b) => a + b, 0), 0);
+            let mutationSum = Object.values(mutationsData).reduce((acc, m) => m.researched ? acc + m.cost : acc, 0);
+            
+            totalPointsDisp.innerText = skillSum + mutationSum;
+
+            renderGrid();
+            syncFrameworkSlots();
+        }
+
+        /* -----------------------------------------------------------
+           URL STATE ENGINE (ENCODE / DECODE CONFIGURATOR)
+        ----------------------------------------------------------- */
+        function generateExportBuildHash() {
+            const stateObj = {
+                a: treeKeysOrder.map(k => allocatedPoints[k].join('')),
+                b: [], 
+                c: slottedMutation ? slottedMutation.id : "",
+                d: [], 
+                e: []  
+            };
+
+            for (let i = 1; i <= 12; i++) {
+                const s = characterSlots[i];
+                stateObj.b.push(s ? [treeKeysOrder.indexOf(s.tree), s.index] : null);
+            }
+
+            mutationKeysOrder.forEach(k => {
+                if (mutationsData[k].researched) stateObj.d.push(k);
+            });
+
+            for (let i = 1; i <= 4; i++) {
+                const cs = centralMutationSlots[i];
+                stateObj.e.push(cs ? [treeKeysOrder.indexOf(cs.tree), cs.index] : null);
+            }
+
+            for (let i = 1; i <= 4; i++) {
+                const m = mutagenSlots[i];
+                if (m) {
+                    const foundIdx = mutagensList.findIndex(ml => ml.name === m.name);
+                    stateObj.b.push(foundIdx !== -1 ? foundIdx : null);
+                } else {
+                    stateObj.b.push(null);
+                }
+            }
+
+            return btoa(JSON.stringify(stateObj)).replace(/=/g, "");
+        }
+
+        function loadBuildStateFromHash(hash) {
+            try {
+                let binaryStr = atob(hash);
+                let stateObj = JSON.parse(binaryStr);
+
+                if (stateObj.a && Array.isArray(stateObj.a)) {
+                    stateObj.a.forEach((treeStr, idx) => {
+                        const targetKey = treeKeysOrder[idx];
+                        if (targetKey) {
+                            for (let i = 0; i < treeStr.length; i++) {
+                                allocatedPoints[targetKey][i] = parseInt(treeStr[i], 10) || 0;
+                            }
+                        }
+                    });
+                }
+
+                if (stateObj.d && Array.isArray(stateObj.d)) {
+                    mutationKeysOrder.forEach(k => mutationsData[k].researched = false);
+                    stateObj.d.forEach(k => { if (mutationsData[k]) mutationsData[k].researched = true; });
+                }
+
+                if (stateObj.c && mutationsData[stateObj.c] && mutationsData[stateObj.c].researched) {
+                    const m = mutationsData[stateObj.c];
+                    slottedMutation = { id: m.id, name: m.name, color: m.color };
+                } else {
+                    slottedMutation = null;
+                }
+
+                if (stateObj.b && Array.isArray(stateObj.b)) {
+                    for (let i = 0; i < 12; i++) {
+                        const arr = stateObj.b[i];
+                        if (arr && Array.isArray(arr)) {
+                            const tree = treeKeysOrder[arr[0]];
+                            const index = arr[1];
+                            if (tree && skillTrees[tree][index] && allocatedPoints[tree][index] > 0) {
+                                characterSlots[i + 1] = { tree, index, name: skillTrees[tree][index].name };
+                            }
+                        }
+                    }
+
+                    for (let i = 12; i < 16; i++) {
+                        const mIdx = stateObj.b[i];
+                        const targetSlotId = (i - 12) + 1;
+                        if (mIdx !== null && mutagensList[mIdx]) {
+                            mutagenSlots[targetSlotId] = { name: mutagensList[mIdx].name, color: mutagensList[mIdx].color };
+                        }
+                    }
+                }
+
+                if (stateObj.e && Array.isArray(stateObj.e)) {
+                    for (let i = 0; i < 4; i++) {
+                        const arr = stateObj.e[i];
+                        if (arr && Array.isArray(arr) && slottedMutation) {
+                            const tree = treeKeysOrder[arr[0]];
+                            const index = arr[1];
+                            if (tree && skillTrees[tree][index] && allocatedPoints[tree][index] > 0 && isSkillAllowedInCentralSlot(tree, slottedMutation.color)) {
+                                centralMutationSlots[i + 1] = { tree, index, name: skillTrees[tree][index].name };
+                            }
+                        }
+                    }
+                }
+
+                updateTotals();
+            } catch (err) {
+                console.error("Failed importing configuration link parameters:", err);
+            }
+        }
+
+        /* -----------------------------------------------------------
+           DOM BINDING INTERFACES & OVERLAY IMPLEMENTATION
+        ----------------------------------------------------------- */
+        const exportBtn = document.getElementById('export-build-btn');
+        const exportModal = document.getElementById('export-modal');
+        const exportUrlField = document.getElementById('export-url-field');
+        const copyUrlBtn = document.getElementById('copy-url-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        exportBtn.addEventListener('click', () => {
+            const token = generateExportBuildHash();
+            const shareUrl = `${window.location.origin}${window.location.pathname}?build=${token}`;
+            exportUrlField.value = shareUrl;
+            exportModal.style.display = 'flex';
+            copyUrlBtn.innerText = "Copy Link";
+        });
+
+        copyUrlBtn.addEventListener('click', () => {
+            exportUrlField.select();
+            exportUrlField.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(exportUrlField.value).then(() => {
+                copyUrlBtn.innerText = "Copied!";
+            });
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            exportModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === exportModal) exportModal.style.display = 'none';
+        });
+
+        document.querySelectorAll('.fw-slot:not(.mutation-dependent-slot)').forEach(slot => {
+            slot.addEventListener('dragover', (e) => e.preventDefault());
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                try {
+                    const dataPayload = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (dataPayload.type !== 'skill') return;
+                    const targetSlotId = slot.getAttribute('data-slot-id');
+                    unslotSkillGlobally(dataPayload.tree, dataPayload.index);
+                    characterSlots[targetSlotId] = { tree: dataPayload.tree, index: dataPayload.index, name: dataPayload.name };
+                    updateTotals();
+                } catch(err) { console.error(err); }
+            });
+            slot.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const targetSlotId = slot.getAttribute('data-slot-id');
+                if (characterSlots[targetSlotId]) { characterSlots[targetSlotId] = null; updateTotals(); }
+            });
+        });
+
+        document.querySelectorAll('.mutation-dependent-slot').forEach(slot => {
+            slot.addEventListener('dragover', (e) => {
+                if (slot.classList.contains('central-unlocked') && slottedMutation) {
+                    e.preventDefault();
+                }
+            });
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (!slot.classList.contains('central-unlocked') || !slottedMutation) return;
+                
+                try {
+                    const dataPayload = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (dataPayload.type !== 'skill') return;
+                    
+                    if (!isSkillAllowedInCentralSlot(dataPayload.tree, slottedMutation.color)) return;
+
+                    const targetCenterId = slot.getAttribute('data-center-slot-id');
+                    unslotSkillGlobally(dataPayload.tree, dataPayload.index);
+                    centralMutationSlots[targetCenterId] = { tree: dataPayload.tree, index: dataPayload.index, name: dataPayload.name };
+                    updateTotals();
+                } catch(err) { console.error(err); }
+            });
+            slot.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const targetCenterId = slot.getAttribute('data-center-slot-id');
+                if (centralMutationSlots[targetCenterId]) {
+                    centralMutationSlots[targetCenterId] = null;
+                    updateTotals();
+                }
+            });
+        });
+
+        document.querySelectorAll('.mutagen-slot-container').forEach(slot => {
+            slot.addEventListener('dragover', (e) => e.preventDefault());
+            slot.addEventListener('drop', (e) => {
+                e.preventDefault();
+                try {
+                    const dataPayload = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (dataPayload.type !== 'mutagen') return;
+                    const targetMutagenId = slot.getAttribute('data-mutagen-id');
+                    mutagenSlots[targetMutagenId] = { name: dataPayload.name, color: dataPayload.color };
+                    updateTotals();
+                } catch(err) { console.error(err); }
+            });
+            slot.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const targetMutagenId = slot.getAttribute('data-mutagen-id');
+                if (mutagenSlots[targetMutagenId]) { mutagenSlots[targetMutagenId] = null; updateTotals(); }
+            });
+        });
+
+        coreMutationSlot.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            coreMutationSlot.classList.add('drag-hover');
+        });
+        coreMutationSlot.addEventListener('dragleave', () => coreMutationSlot.classList.remove('drag-hover'));
+        coreMutationSlot.addEventListener('drop', (e) => {
+            e.preventDefault();
+            coreMutationSlot.classList.remove('drag-hover');
+            try {
+                const dataPayload = JSON.parse(e.dataTransfer.getData('text/plain'));
+                if (dataPayload.type !== 'mutation') return;
+                slottedMutation = { id: dataPayload.id, name: dataPayload.name, color: dataPayload.color };
+                updateTotals();
+            } catch(err) { console.error(err); }
+        });
+        coreMutationSlot.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (slottedMutation) {
+                slottedMutation = null;
+                for (let cId in centralMutationSlots) { centralMutationSlots[cId] = null; }
+                updateTotals();
+            }
+        });
+
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                if (button.classList.contains('disabled')) return;
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentTree = button.getAttribute('data-tree');
+                branchTitle.innerText = currentTree.toUpperCase();
+
+                if (currentTree === "Combat") {
+                    windowFrame.className = "tree-window theme-combat";
+                    columnLabelsFrame.innerHTML = combatLabels.map(lbl => `<div>${lbl}</div>`).join('');
+                } else if (currentTree === "Signs") {
+                    windowFrame.className = "tree-window theme-signs";
+                    columnLabelsFrame.innerHTML = signLabels.map(lbl => `<div>${lbl}</div>`).join('');
+                } else if (currentTree === "Alchemy") {
+                    windowFrame.className = "tree-window theme-alchemy";
+                    columnLabelsFrame.innerHTML = alchemyLabels.map(lbl => `<div>${lbl}</div>`).join('');
+                } else if (currentTree === "General") {
+                    windowFrame.className = "tree-window theme-general";
+                    columnLabelsFrame.innerHTML = generalLabels.map(lbl => `<div>${lbl}</div>`).join('');
+                } else if (currentTree === "Mutagens") {
+                    windowFrame.className = "tree-window theme-mutagens";
+                } else if (currentTree === "Mutations") {
+                    windowFrame.className = "tree-window theme-mutations";
+                }
+                updateTotals();
+            });
+        });
+
+        document.getElementById('reset-tree-btn').addEventListener('click', () => {
+            if (currentTree === "Mutagens") {
+                for (let mId in mutagenSlots) { mutagenSlots[mId] = null; }
+            } else if (currentTree === "Mutations") {
+                Object.keys(mutationsData).forEach(key => {
+                    if (key !== "synapses") mutationsData[key].researched = false;
+                });
+                slottedMutation = null;
+                for (let cId in centralMutationSlots) { centralMutationSlots[cId] = null; }
+            } else {
+                allocatedPoints[currentTree].fill(0);
+                for (let sId in characterSlots) {
+                    if (characterSlots[sId] && characterSlots[sId].tree === currentTree) characterSlots[sId] = null;
+                }
+                for (let cId in centralMutationSlots) {
+                    if (centralMutationSlots[cId] && centralMutationSlots[cId].tree === currentTree) centralMutationSlots[cId] = null;
+                }
+            }
+            updateTotals();
+        });
+
+        document.getElementById('reset-all-btn').addEventListener('click', () => {
+            Object.keys(allocatedPoints).forEach(key => allocatedPoints[key].fill(0));
+            for (let sId in characterSlots) { characterSlots[sId] = null; }
+            for (let mId in mutagenSlots) { mutagenSlots[mId] = null; }
+            for (let cId in centralMutationSlots) { centralMutationSlots[cId] = null; }
+            Object.keys(mutationsData).forEach(key => {
+                if (key !== "synapses") mutationsData[key].researched = false;
+            });
+            slottedMutation = null;
+            updateTotals();
+        });
+
+        // Parse search params for auto-hydration hook routine
+        const urlParams = new URLSearchParams(window.location.search);
+        const buildHash = urlParams.get('build');
+        if (buildHash) {
+            loadBuildStateFromHash(buildHash);
+        } else {
+            updateTotals();
+        }
+    </script>
+</body>
+</html>
