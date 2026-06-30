@@ -1253,6 +1253,60 @@
                     description: "All offensive bomb damage is increased by a massive 200%, but the maximum ammunition capacity of bombs in your equipment slots is cut in half (50% reduction). Does not affect status-only bombs.",
                     levels: ["All offensive bomb damage is increased by a massive 200%, but the maximum ammunition capacity of bombs in your equipment slots is cut in half (50% reduction). Does not affect status-only bombs."]
                 }
+            },
+            Mutations: {
+                "Deadly Counter": {
+                    description: "Sword attacks deal 25% more damage to human enemies immune to counterattacks and monsters. If an opponent is under 25% Vitality, a successful counterattack immediately triggers a finishers animation, killing them instantly.",
+                    requirements: "2 Greater Red Mutagens, 2 Ability Points"
+                },
+                "Bloodbath": {
+                    description: "Every successful melee strike with your sword increases your attack power by 5% until the end of the combat encounter. This bonus stacks up to a maximum of 250%. However, taking any damage from an enemy completely resets this bonus to 0%.",
+                    requirements: "3 Greater Red Mutagens, 3 Ability Points"
+                },
+                "Magic Sensibilities": {
+                    description: "Allows your offensive Signs to inflict critical hits. The critical hit chance scales directly with your overall Sign Intensity. Enemies killed by a Sign critical hit explode, dealing minor damage to nearby foes.",
+                    requirements: "2 Greater Blue Mutagens, 2 Ability Points"
+                },
+                "Piercing Cold": {
+                    description: "Adds a freezing effect to the Aard Sign. Enemies caught in the blast have a 25% chance to be instantly frozen (which kills them outright if they are simultaneously knocked down). Enemies who are not frozen take massive bonus frost damage instead.",
+                    requirements: "3 Greater Blue Mutagens, 3 Ability Points"
+                },
+                "Toxic Blood": {
+                    description: "When an enemy hits you with a melee strike, they take immediate internal damage proportional to your current Potion Toxicity level. For every point of active Toxicity, the enemy takes 1.5% of the damage they just dealt back as net damage.",
+                    requirements: "2 Greater Green Mutagens, 2 Ability Points"
+                },
+                "Euphoria": {
+                    description: "For every point of active potion/decoction Toxicity you possess, your overall Sword Damage and Sign Intensity are increased by 0.75%. (Note: This caps out at a maximum bonus of 75% in the Next-Gen version to curb infinite scaling).",
+                    requirements: "3 Greater Green Mutagens, 3 Ability Points"
+                },
+                "Conductors of Magic": {
+                    description: "When you have a magic, unique, or Witcher sword drawn, the raw damage value displayed on that weapon is added directly to your base Sign damage calculations.",
+                    requirements: "2 Greater Red Mutagens, 2 Greater Blue Mutagens, 3 Ability Points"
+                },
+                "Cat Eyes": {
+                    description: "Crossbow damage is massively amplified. Crossbow bolts deal 700% more raw damage and their baseline critical hit chance is raised by 50%. Crossbow bolts also pierce through opponents, knocking them down or stunning them. If an enemy is at full health, a bolt instantly takes away 15% of their Max Vitality.",
+                    requirements: "2 Greater Red Mutagens, 2 Greater Green Mutagens, 3 Ability Points"
+                },
+                "Metamorphosis": {
+                    description: "Landing a critical hit or applying a critical effect (like Burning or Bleeding) automatically activates a random Mutagen Decoction from your alchemy inventory for 120 seconds. This occurs without adding any Toxicity to your pool. Up to 3 decoctions can be activated simultaneously this way.",
+                    requirements: "2 Greater Blue Mutagens, 2 Greater Green Mutagens, 3 Ability Points"
+                },
+                "Mutated Skin": {
+                    description: "Each available Adrenaline Point reduces all incoming damage taken by 15% (up to a maximum cap of 45% damage reduction at 3 Adrenaline Points).",
+                    requirements: "2 Greater Red, 2 Greater Blue, 2 Greater Green Mutagens, 5 Ability Points"
+                },
+                "Adrenaline Rush": {
+                    description: "Upon entering combat, your Attack Power and Sign Intensity are instantly increased by 30% for each enemy present in the encounter for the first 30 seconds. However, after those 30 seconds pass, the buff drops off and your overall stats are reduced by 10% per enemy for the remaining duration of the fight.",
+                    requirements: "2 Greater Red, 2 Greater Blue, 2 Greater Green Mutagens, 5 Ability Points"
+                },
+                "Second Life": {
+                    description: "When your Vitality is completely depleted to 0, Geralt becomes temporarily invulnerable, clears all negative status effects, and immediately restores 100% of his maximum Vitality. This mutation has a fixed 180-second cooldown between triggers.",
+                    requirements: "2 Greater Red, 2 Greater Blue, 2 Greater Green Mutagens, 5 Ability Points"
+                },
+                "Strengthened Synapses": {
+                    description: "The base mutation that allows for further research. Unlocks the ability to research other mutations.",
+                    requirements: "Unlocked by default."
+                }
             }
         };
 
@@ -1564,6 +1618,45 @@
                                 color: mData.color
                             }));
                         });
+
+                        circ.addEventListener('mouseenter', (e) => {
+                            const tooltip = e.currentTarget.querySelector('.skill-tooltip');
+                            if (!tooltip || !tooltip.innerHTML) return;
+
+                            tooltip.style.bottom = '105%';
+                            tooltip.style.top = 'auto';
+                            tooltip.style.display = 'block';
+
+                            const rect = tooltip.getBoundingClientRect();
+
+                            if (rect.top < 0) {
+                                tooltip.style.top = '105%';
+                                tooltip.style.bottom = 'auto';
+                            }
+                        });
+
+                        circ.addEventListener('mouseleave', (e) => {
+                            const tooltip = e.currentTarget.querySelector('.skill-tooltip');
+                            if (tooltip) {
+                                tooltip.style.display = 'none';
+                            }
+                        });
+
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'skill-tooltip';
+                        const tooltipData = skillTooltips.Mutations?.[mData.name];
+
+                        if (tooltipData) {
+                            let tooltipContent = `<div class="tooltip-name">${mData.name}</div>`;
+                            tooltipContent += `<div class="tooltip-desc">${tooltipData.description}</div>`;
+                            if (tooltipData.requirements) {
+                                tooltipContent += `<div style="margin-top: 10px; color: #ffdd66; font-size: 0.75rem;"><b>Requires:</b> ${tooltipData.requirements}</div>`;
+                            }
+                            tooltip.innerHTML = tooltipContent;
+                        } else {
+                            tooltip.style.display = 'none';
+                        }
+                        circ.appendChild(tooltip);
 
                         rowContainer.appendChild(circ);
                     });

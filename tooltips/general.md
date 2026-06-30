@@ -1,9 +1,3 @@
-Here is the complete breakdown of the **General skill tree** in *The Witcher 3: Wild Hunt*, reflecting all parameters from the **Next-Gen Update**.
-
-Unlike the other trees, the General (Yellow) skill tree has **no tier locks**—all skills are unlocked and purchasable immediately. Additionally, every single skill in this tree maxes out at **Level 1** (requiring only one skill point to fully master).
-
----
-
 ## 🛡️ Armor Proficiency Skills
 
 ### Cat School Techniques
