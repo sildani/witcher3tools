@@ -715,6 +715,81 @@
         .modal-btn.primary-action { background: #1c4d44; border-color: #52ccb6; color: #fff; }
         .modal-btn.primary-action:hover { background: #266b5e; }
     </style>
+    <style>
+        /* Tooltip Styles */
+        .skill-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 105%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            background: var(--panel-bg);
+            border: 2px solid #666;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: sans-serif;
+            font-size: 0.8rem;
+            z-index: 10;
+            text-align: left;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+        }
+
+        .skill-node:hover .skill-tooltip {
+            display: block;
+        }
+
+        .tooltip-name {
+            font-size: 0.95rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #ffdd66;
+            border-bottom: 1px solid #444;
+            padding-bottom: 6px;
+        }
+
+        .tooltip-desc {
+            font-style: italic;
+            color: #b0b0b0;
+            margin-bottom: 10px;
+        }
+
+        .tooltip-levels {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tooltip-levels li {
+            margin-bottom: 5px;
+            line-height: 1.3;
+        }
+
+        .tooltip-levels li.locked {
+            color: #777;
+        }
+
+        .tooltip-levels li.unlocked {
+            color: #fff;
+        }
+
+        .tooltip-levels li b {
+            color: #ddd;
+        }
+
+        /* Adjust tooltip position for nodes on the edge of the grid */
+        .grid-container .skill-node:nth-child(5n+1):hover .skill-tooltip { /* Left edge */
+            left: 0;
+            transform: translateX(0);
+        }
+
+        .grid-container .skill-node:nth-child(5n):hover .skill-tooltip { /* Right edge */
+            left: auto;
+            right: 0;
+            transform: translateX(0);
+        }
+    </style>
 </head>
 <body>
 
@@ -852,6 +927,91 @@
                 { name: "Metabolism Boost", max: 1, req: 0 }, { name: "Trick Shot", max: 1, req: 0 }, { name: "Advanced Pyrotechnics", max: 1, req: 0 }, { name: "Battle Frenzy", max: 1, req: 0 }, { name: "Strong Back", max: 1, req: 0 },
                 { name: "Gorged On Power", max: 1, req: 0 }, { name: "Gourmet", max: 1, req: 0 }, { name: "In Combat's Fires", max: 1, req: 0 }, { name: "Heavy Artillery", max: 1, req: 0 }, { name: "Attack Is The Best Defense", max: 1, req: 0 }
             ]
+        };
+
+        const skillTooltips = {
+            Combat: {
+                "Muscle Memory": {
+                    description: "Increases fast attack damage.",
+                    levels: ["Fast attack damage +10%; Adrenaline Point gain +1%", "Fast attack damage +20%; Adrenaline Point gain +2%", "Fast attack damage +30%; Adrenaline Point gain +3%"]
+                },
+                "Strength Training": {
+                    description: "Increases strong attack damage.",
+                    levels: ["Strong attack damage +10%; Adrenaline Point gain +1%", "Strong attack damage +20%; Adrenaline Point gain +2%", "Strong attack damage +30%; Adrenaline Point gain +3%"]
+                },
+                "Arrow Deflection": {
+                    description: "Allows you to deflect incoming projectiles while parrying.",
+                    levels: ["Deflect arrows while parrying; Adrenaline Point gain +1%", "Perfectly timed parries reflect arrows back at the attacker; Adrenaline Point gain +2%"]
+                },
+                "Lightning Reflexes": {
+                    description: "Time is slowed significantly further while aiming the crossbow.",
+                    levels: ["Slows time by an additional 15%; Adrenaline Point gain +1%", "Slows time by an additional 30%; Adrenaline Point gain +2%", "Slows time by an additional 45%; Adrenaline Point gain +3%"]
+                },
+                "Resolve": {
+                    description: "Minimizes or eliminates the loss of Adrenaline Points when taking damage.",
+                    levels: ["Adrenaline Point loss upon taking damage is reduced by 33%; Adrenaline Point gain +1%", "Adrenaline Point loss upon taking damage is reduced by 67%; Adrenaline Point gain +2%", "Adrenaline Point loss upon taking damage is reduced by 100% (No Adrenaline lost on hit); Adrenaline Point gain +3%"]
+                },
+                "Precise Blows": {
+                    description: "Increases critical hit chance and critical hit damage of fast attacks.",
+                    levels: ["Critical hit chance +4%, Critical hit damage +25%; Adrenaline Point gain +1%", "Critical hit chance +8%, Critical hit damage +50%; Adrenaline Point gain +2%", "Critical hit chance +12%, Critical hit damage +75%; Adrenaline Point gain +3%"]
+                },
+                "Crushing Blows": {
+                    description: "Increases critical hit chance and critical hit damage of strong attacks.",
+                    levels: ["Critical hit chance +4%, Critical hit damage +25%; Adrenaline Point gain +1%", "Critical hit chance +8%, Critical hit damage +50%; Adrenaline Point gain +2%", "Critical hit chance +12%, Critical hit damage +75%; Adrenaline Point gain +3%"]
+                },
+                "Fleet Footed": {
+                    description: "Grants complete protection from hits received while dodging.",
+                    levels: ["Damage from hits received while dodging is reduced by 100%; Adrenaline Point gain +1%"]
+                },
+                "Cold Blood": {
+                    description: "Successfully hitting a target with a crossbow bolt generates instant Adrenaline Points.",
+                    levels: ["Crossbow hits generate 0.1 Adrenaline Points; Adrenaline Point gain +1%", "Crossbow hits generate 0.2 Adrenaline Points; Adrenaline Point gain +2%", "Crossbow hits generate 0.3 Adrenaline Points; Adrenaline Point gain +3%"]
+                },
+                "Undying": {
+                    description: "When Vitality reaches 0, available Adrenaline Points are consumed to instantly restore health.",
+                    levels: ["Restores +33% Vitality upon consumption; Adrenaline Point gain +1%", "Restores +67% Vitality upon consumption; Adrenaline Point gain +2%", "Restores +100% Vitality upon consumption; Adrenaline Point gain +3%"]
+                },
+                "Whirl": {
+                    description: "A continuous spinning attack that strikes all foes in a surrounding area. Maintaining it consumes Stamina and Adrenaline.",
+                    levels: ["Unlocks the Whirl ability; Adrenaline Point gain +1%", "Stamina and Adrenaline consumption reduced by 33%; Adrenaline Point gain +2%", "Stamina and Adrenaline consumption reduced by 50%; Adrenaline Point gain +3%"]
+                },
+                "Rend": {
+                    description: "A heavy overhead strike that deals massive damage proportional to stamina consumed and bypasses enemy defense. Adrenaline Points increase total damage.",
+                    levels: ["Unlocks the Rend ability (increases critical hit chance by 20%); Adrenaline Point gain +1%", "Critical hit chance bonus increased to 40%; Adrenaline Point gain +2%", "Critical hit chance bonus increased to 60%; Adrenaline Point gain +3%"]
+                },
+                "Counter Attack": {
+                    description: "After a successful counterattack, your next attack deals significantly higher bonus damage.",
+                    levels: ["Next attack deals +30% damage; Adrenaline Point gain +1%", "Next attack deals +60% damage, with a chance to knock down; Adrenaline Point gain +2%", "Next attack deals +90% damage, with an increased knockdown chance; Adrenaline Point gain +3%"]
+                },
+                "Anatomical Knowledge": {
+                    description: "Substantially increases crossbow critical hit chance.",
+                    levels: ["Crossbow critical hit chance +20%; Adrenaline Point gain +1%", "Crossbow critical hit chance +40%; Adrenaline Point gain +2%", "Crossbow critical hit chance +60%; Adrenaline Point gain +3%"]
+                },
+                "Razor Focus": {
+                    description: "Instantly grants an Adrenaline Point when entering combat, and increases Adrenaline generated from sword blows.",
+                    levels: ["Instantly gain 1 Adrenaline Point when entering combat. Sword hits generate 5% more Adrenaline; Adrenaline Point gain +1%", "Instantly gain 1 Adrenaline Point when entering combat. Sword hits generate 10% more Adrenaline; Adrenaline Point gain +2%", "Instantly gain 1 Adrenaline Point when entering combat. Sword hits generate 15% more Adrenaline; Adrenaline Point gain +3%"]
+                },
+                "Crippling Strikes": {
+                    description: "Fast attacks apply a Bleeding effect that drains enemy Vitality or Essence. Duration: 5 seconds.",
+                    levels: ["Bleeding deals 50 damage per second; Adrenaline Point gain +1%", "Bleeding deals 100 damage per second; Adrenaline Point gain +2%", "Bleeding deals 150 damage per second; Adrenaline Point gain +3%"]
+                },
+                "Sunder Armor": {
+                    description: "Reduces the target's damage resistance when struck by a strong attack.",
+                    levels: ["Reduces enemy damage resistance by 10%; Adrenaline Point gain +1%", "Reduces enemy damage resistance by 20%; Adrenaline Point gain +2%", "Reduces enemy damage resistance by 30%; Adrenaline Point gain +3%"]
+                },
+                "Deadly Precision": {
+                    description: "Grants a chance to instantly kill an enemy on a successful hit if you possess Adrenaline Points.",
+                    levels: ["Each Adrenaline Point adds a 1% chance of an instant kill; Adrenaline Point gain +1%", "Each Adrenaline Point adds a 2% chance of an instant kill; Adrenaline Point gain +2%"]
+                },
+                "Crippling Shot": {
+                    description: "Critical hits dealt with the crossbow temporarily disable monster special abilities.",
+                    levels: ["Disables monster abilities for 10 seconds; Adrenaline Point gain +1%", "Disables monster abilities for 20 seconds; Adrenaline Point gain +2%", "Disables monster abilities for 30 seconds; Adrenaline Point gain +3%"]
+                },
+                "Flood of Anger": {
+                    description: "When casting a Sign, if 3 Adrenaline Points are available, they are consumed to upgrade the Sign to its highest tier (unlocking all bonuses) and massive Sign intensity.",
+                    levels: ["Sign intensity increased by 100%; Adrenaline Point gain +1%", "Sign intensity increased by 200%; Adrenaline Point gain +2%", "Sign intensity increased by 300%; Adrenaline Point gain +3%"]
+                }
+            }
         };
 
         const mutagensList = [
@@ -1006,6 +1166,7 @@
         const coreMutationSlot = document.getElementById('core-mutation-slot');
 
         function checkIsSlotted(tree, index) {
+            // This function is a candidate for optimization.
             for (let sId in characterSlots) {
                 if (characterSlots[sId] && characterSlots[sId].tree === tree && characterSlots[sId].index === index) {
                     return true;
@@ -1262,6 +1423,28 @@
                         name: skill.name
                     }));
                 });
+
+                const tooltip = document.createElement('div');
+                tooltip.className = 'skill-tooltip';
+                
+                const tooltipData = skillTooltips[currentTree]?.[skill.name];
+                if (tooltipData) {
+                    let tooltipContent = `<div class="tooltip-name">${skill.name}</div>`;
+                    tooltipContent += `<div class="tooltip-desc">${tooltipData.description}</div>`;
+                    
+                    if (tooltipData.levels) {
+                        tooltipContent += '<ul class="tooltip-levels">';
+                        tooltipData.levels.forEach((level, i) => {
+                            const levelClass = (count > 0 && i < count) ? 'unlocked' : 'locked';
+                            tooltipContent += `<li class="${levelClass}"><b>Level ${i + 1}:</b> ${level}</li>`;
+                        });
+                        tooltipContent += '</ul>';
+                    }
+                    tooltip.innerHTML = tooltipContent;
+                } else {
+                    tooltip.style.display = 'none';
+                }
+                node.appendChild(tooltip);
 
                 gridRoot.appendChild(node);
             });
