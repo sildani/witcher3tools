@@ -736,10 +736,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.7);
         }
 
-        .skill-node:hover .skill-tooltip {
-            display: block;
-        }
-
         .tooltip-name {
             font-size: 0.95rem;
             font-weight: bold;
@@ -1504,6 +1500,31 @@
                         index: index,
                         name: skill.name
                     }));
+                });
+
+                node.addEventListener('mouseenter', (e) => {
+                    const tooltip = e.currentTarget.querySelector('.skill-tooltip');
+                    if (!tooltip || !tooltip.innerHTML) return;
+
+                    // Reset position before calculating
+                    tooltip.style.bottom = '105%';
+                    tooltip.style.top = 'auto';
+                    tooltip.style.display = 'block';
+
+                    const rect = tooltip.getBoundingClientRect();
+
+                    // If tooltip is off-screen at the top, flip it to be below the node
+                    if (rect.top < 0) {
+                        tooltip.style.top = '105%';
+                        tooltip.style.bottom = 'auto';
+                    }
+                });
+
+                node.addEventListener('mouseleave', (e) => {
+                    const tooltip = e.currentTarget.querySelector('.skill-tooltip');
+                    if (tooltip) {
+                        tooltip.style.display = 'none';
+                    }
                 });
 
                 const tooltip = document.createElement('div');
