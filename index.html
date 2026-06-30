@@ -1011,6 +1011,88 @@
                     description: "When casting a Sign, if 3 Adrenaline Points are available, they are consumed to upgrade the Sign to its highest tier (unlocking all bonuses) and massive Sign intensity.",
                     levels: ["Sign intensity increased by 100%; Adrenaline Point gain +1%", "Sign intensity increased by 200%; Adrenaline Point gain +2%", "Sign intensity increased by 300%; Adrenaline Point gain +3%"]
                 }
+            },
+            Signs: {
+                "Far-reaching Aard": {
+                    description: "Increases the radius of Aard's telekinetic blast.",
+                    levels: ["Aard range increased by 1 meter.", "Aard range increased by 2 meters.", "Aard range increased by 3 meters."]
+                },
+                "Melt Armor": {
+                    description: "Damage dealt by Igni permanently weakens enemy armor, leaving them vulnerable to physical sword attacks.",
+                    levels: ["Reduces enemy armor by 15% (scales with Sign intensity up to a maximum cap).", "Reduces enemy armor by 30%.", "Reduces enemy armor by 45%."]
+                },
+                "Sustained Glyphs": {
+                    description: "Extends the active life of Yrden traps and increases total trap capacity.",
+                    levels: ["Adds 5 seconds to Sign duration. Geralt can place 2 standard traps or increase alternate mode charges to 5.", "Adds 10 seconds to Sign duration. Geralt can place 2 standard traps or increase alternate mode charges to 7.", "Adds 15 seconds to Sign duration. Geralt can place 2 standard traps or increase alternate mode charges to 9."]
+                },
+                "Exploding Shield": {
+                    description: "When your active Quen shield is completely depleted or broken by damage, it erupts outwards to stagger nearby threats.",
+                    levels: ["Pushes enemies back with a small chance of knocking them down.", "Pushes enemies back with a moderate chance of knockdown.", "Pushes enemies back with a high chance of knockdown; inflicts minor physical damage."]
+                },
+                "Delusion": {
+                    description: "Targets do not move toward Geralt while he is casting Axii. It also opens up unique dialogue opportunities in conversations, bypassing potential fights.",
+                    levels: ["Target movement is slowed during casting; unlocks level 1 dialogue options.", "Target movement is heavily slowed during casting; unlocks level 2 dialogue options.", "Target movement is completely frozen during casting; unlocks level 3 dialogue options."]
+                },
+                "Aard Sweep": {
+                    description: "Hold the Sign button to strike all opponents in a full 360-degree radius around Geralt.",
+                    levels: ["Radially strikes enemies; knock-down chance is reduced by 21%.", "Radially strikes enemies; knock-down chance is reduced by 11%.", "Radially strikes enemies; knock-down chance is no longer reduced."]
+                },
+                "Firestream": {
+                    description: "Hold the Sign button to emit a continuous, concentrated stream of flame that targets single enemies and forces shield-wielders to drop their guard.",
+                    levels: ["Continuous stream unlocked; drains Stamina while active.", "Continuous stream unlocked; slightly reduces Stamina drainage.", "Continuous stream unlocked; drastically reduces Stamina drainage."]
+                },
+                "Magic Trap": {
+                    description: "Hold the Sign button to place an aggressive automated turret trap. It damages and slows all enemies within a 10-meter radius, while vaporizing incoming enemy projectiles (like arrows).",
+                    levels: ["Alternate trap unlocked; deals minor damage.", "Damage increased by 25%; projectile destruction speed increased.", "Damage increased by 50%; projectile destruction speed maxed out."]
+                },
+                "Active Shield": {
+                    description: "Hold the Sign button to form a continuous, spherical energy barrier. Absorbing incoming attacks no longer deals damage to you; instead, it consumes Stamina and heals Geralt.",
+                    levels: ["Active sphere unlocked; maintaining it slowly drains Stamina.", "Stamina drained by blocked attacks is reduced by 25%.", "Stamina drained by blocked attacks is reduced by 50%."]
+                },
+                "Puppet": {
+                    description: "Hold the Sign button to turn an enemy into a temporary ally. They will immediately fight alongside you and deal amplified damage.",
+                    levels: ["Target becomes an ally; deals 20% more damage.", "Target becomes an ally; deals 40% more damage.", "Target becomes an ally; deals 60% more damage."]
+                },
+                "Shock Wave": {
+                    description: "Adds physical damage to the impact of the telekinetic blast.",
+                    levels: ["Aard deals 100 physical damage.", "Aard deals 200 physical damage.", "Aard deals 300 physical damage."]
+                },
+                "Pyromaniac": {
+                    description: "Significantly increases the base probability of setting enemies on fire.",
+                    levels: ["Increases chance to apply Burning status by 20%.", "Increases chance to apply Burning status by 40%.", "Increases chance to apply Burning status by 60%."]
+                },
+                "Supercharged Glyphs": {
+                    description: "Enemies trapped inside the active Yrden matrix take passive damage over time, scaling directly against their maximum health pool.",
+                    levels: ["Drains a minor percentage of enemy Max Vitality/Essence per second.", "Drains a moderate percentage of enemy Max Vitality/Essence per second.", "Drains a significant percentage of enemy Max Vitality/Essence per second (highly effective against bosses)."]
+                },
+                "Quen Discharge": {
+                    description: "Reflects a direct portion of the damage absorbed by standard Quen right back at the enemy who dealt it.",
+                    levels: ["Reflects 10% of absorbed damage back to the attacker.", "Reflects 20% of absorbed damage back to the attacker.", "Reflects 30% of absorbed damage back to the attacker."]
+                },
+                "Domination": {
+                    description: "Expands Axii’s cognitive influence, allowing you to manipulate multiple targets at once.",
+                    levels: ["Axii can influence 2 targets simultaneously, though the stun effect's duration is reduced by 33%.", "Axii can influence 2 targets simultaneously, and the stun effect's duration is only reduced by 15%.", "Axii can influence 2 targets simultaneously with no penalty to the stun duration."]
+                },
+                "Intensity: Aard": {
+                    description: "Directly increases the overall effectiveness and knock-down probability of Aard.",
+                    levels: ["Aard Sign intensity increased by 10%.", "Aard Sign intensity increased by 20%.", "Aard Sign intensity increased by 30%."]
+                },
+                "Intensity: Igni": {
+                    description: "Directly boosts Igni's raw damage output and its percentage chance to trigger the continuous Burning status effect.",
+                    levels: ["Igni Sign intensity increased by 10%.", "Igni Sign intensity increased by 20%.", "Igni Sign intensity increased by 30%."]
+                },
+                "Intensity: Yrden": {
+                    description: "Strengthens the magnitude of the movement/attack slow effect and enhances the power of the alternate trap mode.",
+                    levels: ["Yrden Sign intensity increased by 10%.", "Yrden Sign intensity increased by 20%.", "Yrden Sign intensity increased by 30%."]
+                },
+                "Intensity: Quen": {
+                    description: "Enhances the maximum amount of structural damage the shield can absorb before shattering.",
+                    levels: ["Quen Sign intensity increased by 10%.", "Quen Sign intensity increased by 20%.", "Quen Sign intensity increased by 30%."]
+                },
+                "Intensity: Axii": {
+                    description: "Increases the raw duration of Axii's stun effect.",
+                    levels: ["Axii Sign intensity increased by 10%.", "Axii Sign intensity increased by 20%.", "Axii Sign intensity increased by 30%."]
+                }
             }
         };
 
