@@ -715,6 +715,77 @@
         .modal-btn.primary-action { background: #1c4d44; border-color: #52ccb6; color: #fff; }
         .modal-btn.primary-action:hover { background: #266b5e; }
     </style>
+    <style>
+        /* Tooltip Styles */
+        .skill-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 105%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            background: var(--panel-bg);
+            border: 2px solid #666;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: sans-serif;
+            font-size: 0.8rem;
+            z-index: 10;
+            text-align: left;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+        }
+
+        .tooltip-name {
+            font-size: 0.95rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #ffdd66;
+            border-bottom: 1px solid #444;
+            padding-bottom: 6px;
+        }
+
+        .tooltip-desc {
+            font-style: italic;
+            color: #b0b0b0;
+            margin-bottom: 10px;
+        }
+
+        .tooltip-levels {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .tooltip-levels li {
+            margin-bottom: 5px;
+            line-height: 1.3;
+        }
+
+        .tooltip-levels li.locked {
+            color: #777;
+        }
+
+        .tooltip-levels li.unlocked {
+            color: #fff;
+        }
+
+        .tooltip-levels li b {
+            color: #ddd;
+        }
+
+        /* Adjust tooltip position for nodes on the edge of the grid */
+        .grid-container .skill-node:nth-child(5n+1):hover .skill-tooltip { /* Left edge */
+            left: 0;
+            transform: translateX(0);
+        }
+
+        .grid-container .skill-node:nth-child(5n):hover .skill-tooltip { /* Right edge */
+            left: auto;
+            right: 0;
+            transform: translateX(0);
+        }
+    </style>
 </head>
 <body>
 
@@ -852,6 +923,391 @@
                 { name: "Metabolism Boost", max: 1, req: 0 }, { name: "Trick Shot", max: 1, req: 0 }, { name: "Advanced Pyrotechnics", max: 1, req: 0 }, { name: "Battle Frenzy", max: 1, req: 0 }, { name: "Strong Back", max: 1, req: 0 },
                 { name: "Gorged On Power", max: 1, req: 0 }, { name: "Gourmet", max: 1, req: 0 }, { name: "In Combat's Fires", max: 1, req: 0 }, { name: "Heavy Artillery", max: 1, req: 0 }, { name: "Attack Is The Best Defense", max: 1, req: 0 }
             ]
+        };
+
+        const skillTooltips = {
+            Combat: {
+                "Muscle Memory": {
+                    description: "Increases fast attack damage.",
+                    levels: ["Fast attack damage +10%; Adrenaline Point gain +1%", "Fast attack damage +20%; Adrenaline Point gain +2%", "Fast attack damage +30%; Adrenaline Point gain +3%"]
+                },
+                "Strength Training": {
+                    description: "Increases strong attack damage.",
+                    levels: ["Strong attack damage +10%; Adrenaline Point gain +1%", "Strong attack damage +20%; Adrenaline Point gain +2%", "Strong attack damage +30%; Adrenaline Point gain +3%"]
+                },
+                "Arrow Deflection": {
+                    description: "Allows you to deflect incoming projectiles while parrying.",
+                    levels: ["Deflect arrows while parrying; Adrenaline Point gain +1%", "Perfectly timed parries reflect arrows back at the attacker; Adrenaline Point gain +2%"]
+                },
+                "Lightning Reflexes": {
+                    description: "Time is slowed significantly further while aiming the crossbow.",
+                    levels: ["Slows time by an additional 15%; Adrenaline Point gain +1%", "Slows time by an additional 30%; Adrenaline Point gain +2%", "Slows time by an additional 45%; Adrenaline Point gain +3%"]
+                },
+                "Resolve": {
+                    description: "Minimizes or eliminates the loss of Adrenaline Points when taking damage.",
+                    levels: ["Adrenaline Point loss upon taking damage is reduced by 33%; Adrenaline Point gain +1%", "Adrenaline Point loss upon taking damage is reduced by 67%; Adrenaline Point gain +2%", "Adrenaline Point loss upon taking damage is reduced by 100% (No Adrenaline lost on hit); Adrenaline Point gain +3%"]
+                },
+                "Precise Blows": {
+                    description: "Increases critical hit chance and critical hit damage of fast attacks.",
+                    levels: ["Critical hit chance +4%, Critical hit damage +25%; Adrenaline Point gain +1%", "Critical hit chance +8%, Critical hit damage +50%; Adrenaline Point gain +2%", "Critical hit chance +12%, Critical hit damage +75%; Adrenaline Point gain +3%"]
+                },
+                "Crushing Blows": {
+                    description: "Increases critical hit chance and critical hit damage of strong attacks.",
+                    levels: ["Critical hit chance +4%, Critical hit damage +25%; Adrenaline Point gain +1%", "Critical hit chance +8%, Critical hit damage +50%; Adrenaline Point gain +2%", "Critical hit chance +12%, Critical hit damage +75%; Adrenaline Point gain +3%"]
+                },
+                "Fleet Footed": {
+                    description: "Grants complete protection from hits received while dodging.",
+                    levels: ["Damage from hits received while dodging is reduced by 100%; Adrenaline Point gain +1%"]
+                },
+                "Cold Blood": {
+                    description: "Successfully hitting a target with a crossbow bolt generates instant Adrenaline Points.",
+                    levels: ["Crossbow hits generate 0.1 Adrenaline Points; Adrenaline Point gain +1%", "Crossbow hits generate 0.2 Adrenaline Points; Adrenaline Point gain +2%", "Crossbow hits generate 0.3 Adrenaline Points; Adrenaline Point gain +3%"]
+                },
+                "Undying": {
+                    description: "When Vitality reaches 0, available Adrenaline Points are consumed to instantly restore health.",
+                    levels: ["Restores +33% Vitality upon consumption; Adrenaline Point gain +1%", "Restores +67% Vitality upon consumption; Adrenaline Point gain +2%", "Restores +100% Vitality upon consumption; Adrenaline Point gain +3%"]
+                },
+                "Whirl": {
+                    description: "A continuous spinning attack that strikes all foes in a surrounding area. Maintaining it consumes Stamina and Adrenaline.",
+                    levels: ["Unlocks the Whirl ability; Adrenaline Point gain +1%", "Stamina and Adrenaline consumption reduced by 33%; Adrenaline Point gain +2%", "Stamina and Adrenaline consumption reduced by 50%; Adrenaline Point gain +3%"]
+                },
+                "Rend": {
+                    description: "A heavy overhead strike that deals massive damage proportional to stamina consumed and bypasses enemy defense. Adrenaline Points increase total damage.",
+                    levels: ["Unlocks the Rend ability (increases critical hit chance by 20%); Adrenaline Point gain +1%", "Critical hit chance bonus increased to 40%; Adrenaline Point gain +2%", "Critical hit chance bonus increased to 60%; Adrenaline Point gain +3%"]
+                },
+                "Counter Attack": {
+                    description: "After a successful counterattack, your next attack deals significantly higher bonus damage.",
+                    levels: ["Next attack deals +30% damage; Adrenaline Point gain +1%", "Next attack deals +60% damage, with a chance to knock down; Adrenaline Point gain +2%", "Next attack deals +90% damage, with an increased knockdown chance; Adrenaline Point gain +3%"]
+                },
+                "Anatomical Knowledge": {
+                    description: "Substantially increases crossbow critical hit chance.",
+                    levels: ["Crossbow critical hit chance +20%; Adrenaline Point gain +1%", "Crossbow critical hit chance +40%; Adrenaline Point gain +2%", "Crossbow critical hit chance +60%; Adrenaline Point gain +3%"]
+                },
+                "Razor Focus": {
+                    description: "Instantly grants an Adrenaline Point when entering combat, and increases Adrenaline generated from sword blows.",
+                    levels: ["Instantly gain 1 Adrenaline Point when entering combat. Sword hits generate 5% more Adrenaline; Adrenaline Point gain +1%", "Instantly gain 1 Adrenaline Point when entering combat. Sword hits generate 10% more Adrenaline; Adrenaline Point gain +2%", "Instantly gain 1 Adrenaline Point when entering combat. Sword hits generate 15% more Adrenaline; Adrenaline Point gain +3%"]
+                },
+                "Crippling Strikes": {
+                    description: "Fast attacks apply a Bleeding effect that drains enemy Vitality or Essence. Duration: 5 seconds.",
+                    levels: ["Bleeding deals 50 damage per second; Adrenaline Point gain +1%", "Bleeding deals 100 damage per second; Adrenaline Point gain +2%", "Bleeding deals 150 damage per second; Adrenaline Point gain +3%"]
+                },
+                "Sunder Armor": {
+                    description: "Reduces the target's damage resistance when struck by a strong attack.",
+                    levels: ["Reduces enemy damage resistance by 10%; Adrenaline Point gain +1%", "Reduces enemy damage resistance by 20%; Adrenaline Point gain +2%", "Reduces enemy damage resistance by 30%; Adrenaline Point gain +3%"]
+                },
+                "Deadly Precision": {
+                    description: "Grants a chance to instantly kill an enemy on a successful hit if you possess Adrenaline Points.",
+                    levels: ["Each Adrenaline Point adds a 1% chance of an instant kill; Adrenaline Point gain +1%", "Each Adrenaline Point adds a 2% chance of an instant kill; Adrenaline Point gain +2%"]
+                },
+                "Crippling Shot": {
+                    description: "Critical hits dealt with the crossbow temporarily disable monster special abilities.",
+                    levels: ["Disables monster abilities for 10 seconds; Adrenaline Point gain +1%", "Disables monster abilities for 20 seconds; Adrenaline Point gain +2%", "Disables monster abilities for 30 seconds; Adrenaline Point gain +3%"]
+                },
+                "Flood of Anger": {
+                    description: "When casting a Sign, if 3 Adrenaline Points are available, they are consumed to upgrade the Sign to its highest tier (unlocking all bonuses) and massive Sign intensity.",
+                    levels: ["Sign intensity increased by 100%; Adrenaline Point gain +1%", "Sign intensity increased by 200%; Adrenaline Point gain +2%", "Sign intensity increased by 300%; Adrenaline Point gain +3%"]
+                }
+            },
+            Signs: {
+                "Far-reaching Aard": {
+                    description: "Increases the radius of Aard's telekinetic blast.",
+                    levels: ["Aard range increased by 1 meter.", "Aard range increased by 2 meters.", "Aard range increased by 3 meters."]
+                },
+                "Melt Armor": {
+                    description: "Damage dealt by Igni permanently weakens enemy armor, leaving them vulnerable to physical sword attacks.",
+                    levels: ["Reduces enemy armor by 15% (scales with Sign intensity up to a maximum cap).", "Reduces enemy armor by 30%.", "Reduces enemy armor by 45%."]
+                },
+                "Sustained Glyphs": {
+                    description: "Extends the active life of Yrden traps and increases total trap capacity.",
+                    levels: ["Adds 5 seconds to Sign duration. Geralt can place 2 standard traps or increase alternate mode charges to 5.", "Adds 10 seconds to Sign duration. Geralt can place 2 standard traps or increase alternate mode charges to 7.", "Adds 15 seconds to Sign duration. Geralt can place 2 standard traps or increase alternate mode charges to 9."]
+                },
+                "Exploding Shield": {
+                    description: "When your active Quen shield is completely depleted or broken by damage, it erupts outwards to stagger nearby threats.",
+                    levels: ["Pushes enemies back with a small chance of knocking them down.", "Pushes enemies back with a moderate chance of knockdown.", "Pushes enemies back with a high chance of knockdown; inflicts minor physical damage."]
+                },
+                "Delusion": {
+                    description: "Targets do not move toward Geralt while he is casting Axii. It also opens up unique dialogue opportunities in conversations, bypassing potential fights.",
+                    levels: ["Target movement is slowed during casting; unlocks level 1 dialogue options.", "Target movement is heavily slowed during casting; unlocks level 2 dialogue options.", "Target movement is completely frozen during casting; unlocks level 3 dialogue options."]
+                },
+                "Aard Sweep": {
+                    description: "Hold the Sign button to strike all opponents in a full 360-degree radius around Geralt.",
+                    levels: ["Radially strikes enemies; knock-down chance is reduced by 21%.", "Radially strikes enemies; knock-down chance is reduced by 11%.", "Radially strikes enemies; knock-down chance is no longer reduced."]
+                },
+                "Firestream": {
+                    description: "Hold the Sign button to emit a continuous, concentrated stream of flame that targets single enemies and forces shield-wielders to drop their guard.",
+                    levels: ["Continuous stream unlocked; drains Stamina while active.", "Continuous stream unlocked; slightly reduces Stamina drainage.", "Continuous stream unlocked; drastically reduces Stamina drainage."]
+                },
+                "Magic Trap": {
+                    description: "Hold the Sign button to place an aggressive automated turret trap. It damages and slows all enemies within a 10-meter radius, while vaporizing incoming enemy projectiles (like arrows).",
+                    levels: ["Alternate trap unlocked; deals minor damage.", "Damage increased by 25%; projectile destruction speed increased.", "Damage increased by 50%; projectile destruction speed maxed out."]
+                },
+                "Active Shield": {
+                    description: "Hold the Sign button to form a continuous, spherical energy barrier. Absorbing incoming attacks no longer deals damage to you; instead, it consumes Stamina and heals Geralt.",
+                    levels: ["Active sphere unlocked; maintaining it slowly drains Stamina.", "Stamina drained by blocked attacks is reduced by 25%.", "Stamina drained by blocked attacks is reduced by 50%."]
+                },
+                "Puppet": {
+                    description: "Hold the Sign button to turn an enemy into a temporary ally. They will immediately fight alongside you and deal amplified damage.",
+                    levels: ["Target becomes an ally; deals 20% more damage.", "Target becomes an ally; deals 40% more damage.", "Target becomes an ally; deals 60% more damage."]
+                },
+                "Shock Wave": {
+                    description: "Adds physical damage to the impact of the telekinetic blast.",
+                    levels: ["Aard deals 100 physical damage.", "Aard deals 200 physical damage.", "Aard deals 300 physical damage."]
+                },
+                "Pyromaniac": {
+                    description: "Significantly increases the base probability of setting enemies on fire.",
+                    levels: ["Increases chance to apply Burning status by 20%.", "Increases chance to apply Burning status by 40%.", "Increases chance to apply Burning status by 60%."]
+                },
+                "Supercharged Glyphs": {
+                    description: "Enemies trapped inside the active Yrden matrix take passive damage over time, scaling directly against their maximum health pool.",
+                    levels: ["Drains a minor percentage of enemy Max Vitality/Essence per second.", "Drains a moderate percentage of enemy Max Vitality/Essence per second.", "Drains a significant percentage of enemy Max Vitality/Essence per second (highly effective against bosses)."]
+                },
+                "Quen Discharge": {
+                    description: "Reflects a direct portion of the damage absorbed by standard Quen right back at the enemy who dealt it.",
+                    levels: ["Reflects 10% of absorbed damage back to the attacker.", "Reflects 20% of absorbed damage back to the attacker.", "Reflects 30% of absorbed damage back to the attacker."]
+                },
+                "Domination": {
+                    description: "Expands Axii’s cognitive influence, allowing you to manipulate multiple targets at once.",
+                    levels: ["Axii can influence 2 targets simultaneously, though the stun effect's duration is reduced by 33%.", "Axii can influence 2 targets simultaneously, and the stun effect's duration is only reduced by 15%.", "Axii can influence 2 targets simultaneously with no penalty to the stun duration."]
+                },
+                "Intensity: Aard": {
+                    description: "Directly increases the overall effectiveness and knock-down probability of Aard.",
+                    levels: ["Aard Sign intensity increased by 10%.", "Aard Sign intensity increased by 20%.", "Aard Sign intensity increased by 30%."]
+                },
+                "Intensity: Igni": {
+                    description: "Directly boosts Igni's raw damage output and its percentage chance to trigger the continuous Burning status effect.",
+                    levels: ["Igni Sign intensity increased by 10%.", "Igni Sign intensity increased by 20%.", "Igni Sign intensity increased by 30%."]
+                },
+                "Intensity: Yrden": {
+                    description: "Strengthens the magnitude of the movement/attack slow effect and enhances the power of the alternate trap mode.",
+                    levels: ["Yrden Sign intensity increased by 10%.", "Yrden Sign intensity increased by 20%.", "Yrden Sign intensity increased by 30%."]
+                },
+                "Intensity: Quen": {
+                    description: "Enhances the maximum amount of structural damage the shield can absorb before shattering.",
+                    levels: ["Quen Sign intensity increased by 10%.", "Quen Sign intensity increased by 20%.", "Quen Sign intensity increased by 30%."]
+                },
+                "Intensity: Axii": {
+                    description: "Increases the raw duration of Axii's stun effect.",
+                    levels: ["Axii Sign intensity increased by 10%.", "Axii Sign intensity increased by 20%.", "Axii Sign intensity increased by 30%."]
+                }
+            },
+            Alchemy: {
+                "Heightened Tolerance": {
+                    description: "Increases the Potion Overdose threshold, allowing you to drink more standard potions before taking toxicity damage.",
+                    levels: ["Overdose threshold increased to 60%.", "Overdose threshold increased to 70%.", "Overdose threshold increased to 80%."]
+                },
+                "Poisoned Blades": {
+                    description: "Blade oils applied to your swords grant a baseline chance to poison the target on every hit. The effect scales with higher-tier oils.",
+                    levels: ["10% poison chance.", "20% poison chance.", "30% poison chance."]
+                },
+                "Steady Aim": {
+                    description: "Time is slowed significantly further while aiming a handheld bomb.",
+                    levels: ["Time slowdown increased by 100%."]
+                },
+                "Acquired Tolerance": {
+                    description: "Expands your maximum Toxicity pool based on the number of alchemy recipes you have learned across the world.",
+                    levels: ["Every known level 1, 2, or 3 alchemy recipe increases maximum Toxicity by 0.5 points.", "Every known level 1, 2, or 3 alchemy recipe increases maximum Toxicity by 1 point.", "Every known level 1, 2, or 3 alchemy recipe increases maximum Toxicity by 1.5 points."]
+                },
+                "Frenzy": {
+                    description: "If your potion Toxicity is above 0, automatic time slowdown is triggered whenever an enemy is about to perform a counterattack.",
+                    levels: ["Automatically slows time when an enemy counters."]
+                },
+                "Refreshment": {
+                    description: "Imbibing any potion dose instantly heals a portion of your maximum Vitality.",
+                    levels: ["Instantly heals 10% of maximum Vitality.", "Instantly heals 20% of maximum Vitality.", "Instantly heals 30% of maximum Vitality."]
+                },
+                "Protective Coating": {
+                    description: "Grants protective damage resistance against attacks from the specific monster type targeted by the currently applied oil.",
+                    levels: ["Adds +5% damage protection.", "Adds +10% damage protection.", "Adds +15% damage protection."]
+                },
+                "Pyrotechnics": {
+                    description: "Bombs that do not usually inflict physical damage (such as Samum or Devil's Puffball) now deal damage in addition to their normal debuff effects.",
+                    levels: ["Bombs deal 50 bonus damage.", "Bombs deal 100 bonus damage.", "Bombs deal 150 bonus damage."]
+                },
+                "Tissue Transmutation": {
+                    description: "When a Mutagen Decoction is consumed, it temporarily boosts your maximum Vitality for the entire duration of the brew.",
+                    levels: ["Adds +300 maximum Vitality per active decoction.", "Adds +600 maximum Vitality per active decoction.", "Adds +900 maximum Vitality per active decoction."]
+                },
+                "Endure Pain": {
+                    description: "Increases maximum Vitality when overall Toxicity exceeds the safe threshold level.",
+                    levels: ["Maximum Vitality increased by 10%.", "Maximum Vitality increased by 20%.", "Maximum Vitality increased by 30%."]
+                },
+                "Delayed Recovery": {
+                    description: "Potion effects do not wear off as long as your overall potion Toxicity remains high enough.",
+                    levels: ["Potion effects don't wear off if Toxicity is above 85% of maximum.", "Potion effects don't wear off if Toxicity is above 70% of maximum.", "Potion effects don't wear off if Toxicity is above 55% of maximum."]
+                },
+                "Fixative": {
+                    description: "Blade oils now have a significantly higher number of charges before wearing off.",
+                    levels: ["Blade oils have 33% more charges.", "Blade oils have 66% more charges.", "Blade oils never wear off (infinite charges)."]
+                },
+                "Efficiency": {
+                    description: "Increases the maximum carrying capacity of bombs in each inventory slot.",
+                    levels: ["Maximum number of bombs in each slot increased by 1.", "Maximum number of bombs in each slot increased by 2.", "Maximum number of bombs in each slot increased by 3."]
+                },
+                "Synergy": {
+                    description: "Boosts the unique stat bonuses provided by the Mutagens placed in your Character character slots.",
+                    levels: ["Mutagen slot bonuses increased by 15%.", "Mutagen slot bonuses increased by 30%.", "Mutagen slot bonuses increased by 50%."]
+                },
+                "Fast Metabolism": {
+                    description: "Toxicity drops at a much faster rate per second, clearing out potion side effects rapidly.",
+                    levels: ["Toxicity drops 1 point faster per second.", "Toxicity drops 2 points faster per second.", "Toxicity drops 3 points faster per second."]
+                },
+                "Side Effects": {
+                    description: "Drinking a potion grants a high chance of activating the effects of another randomly selected potion completely for free, without any extra Toxicity cost.",
+                    levels: ["33% chance to activate an additional potion effect.", "66% chance to activate an additional potion effect.", "100% chance to activate an additional potion effect."]
+                },
+                "Hunter Instinct": {
+                    description: "When Adrenaline Points are at their maximum, critical hit damage against the targeted enemy type is increased.",
+                    levels: ["Critical hit damage bonus increased by 33%.", "Critical hit damage bonus increased by 67%.", "Critical hit damage bonus increased by 100%."]
+                },
+                "Cluster Bombs": {
+                    description: "Upon initial detonation, bombs split apart into multiple explosive fragments.",
+                    levels: ["Bomb separates into 2 explosive fragments.", "Bomb separates into 4 explosive fragments.", "Bomb separates into 6 explosive fragments."]
+                },
+                "Adaptation": {
+                    description: "Extends the total active duration of all Mutagen Decoctions.",
+                    levels: ["Decoction duration increased by 10%.", "Decoction duration increased by 20%.", "Decoction duration increased by 30%."]
+                },
+                "Killing Spree": {
+                    description: "If potion Toxicity is above 0, each enemy killed drastically increases your chance to land a critical hit.",
+                    levels: ["Critical hit chance increased by 15% per kill.", "Critical hit chance increased by 30% per kill.", "Critical hit chance increased by 50% per kill."]
+                }
+            },
+            General: {
+                "Sun and Stars": {
+                    description: "During the daytime, Vitality regenerates by an extra 10 points per second when out of combat. At nighttime, Stamina regenerates by an extra 1 point per second during combat.",
+                    levels: ["During the daytime, Vitality regenerates by an extra 10 points per second when out of combat. At nighttime, Stamina regenerates by an extra 1 point per second during combat."]
+                },
+                "Survival Instinct": {
+                    description: "Increases your overall maximum Vitality by a flat 500 points.",
+                    levels: ["Increases your overall maximum Vitality by a flat 500 points."]
+                },
+                "Cat School Techniques": {
+                    description: "Each piece of Light Armor equipped increases critical hit damage by 25% and fast attack damage by 5%.",
+                    levels: ["Each piece of Light Armor equipped increases critical hit damage by 25% and fast attack damage by 5%."]
+                },
+                "Griffin School Techniques": {
+                    description: "Each piece of Medium Armor equipped increases Sign Intensity by 5% and Stamina regeneration in combat by 5%.",
+                    levels: ["Each piece of Medium Armor equipped increases Sign Intensity by 5% and Stamina regeneration in combat by 5%."]
+                },
+                "Bear School Techniques": {
+                    description: "Each piece of Heavy Armor equipped increases strong attack damage by 5% and maximum health (Vitality) by 5%.",
+                    levels: ["Each piece of Heavy Armor equipped increases strong attack damage by 5% and maximum health (Vitality) by 5%."]
+                },
+                "Steady Shot": {
+                    description: "Crossbow bolts deal 25% more raw damage.",
+                    levels: ["Crossbow bolts deal 25% more raw damage."]
+                },
+                "Rage Management": {
+                    description: "If your current Stamina pool is too low to cast a Sign, you can cast it by consuming 1 Adrenaline Point instead.",
+                    levels: ["If your current Stamina pool is too low to cast a Sign, you can cast it by consuming 1 Adrenaline Point instead."]
+                },
+                "Focus": {
+                    description: "Adrenaline Points increase your weapon damage (as normal) but now also increase your Sign damage proportionally.",
+                    levels: ["Adrenaline Points increase your weapon damage (as normal) but now also increase your Sign damage proportionally."]
+                },
+                "Adrenaline Burst": {
+                    description: "Increases global Adrenaline Point generation by 5%. Furthermore, successfully casting Signs now also generates Adrenaline Points.",
+                    levels: ["Increases global Adrenaline Point generation by 5%. Furthermore, successfully casting Signs now also generates Adrenaline Points."]
+                },
+                "Metabolism Control": {
+                    description: "Permanently increases your baseline maximum Toxicity pool by 30 points.",
+                    levels: ["Permanently increases your baseline maximum Toxicity pool by 30 points."]
+                },
+                "Gourmet": {
+                    description: "Consuming food triggers a Vitality regeneration effect that lasts for 20 continuous minutes (rather than expiring after a few seconds).",
+                    levels: ["Consuming food triggers a Vitality regeneration effect that lasts for 20 continuous minutes (rather than expiring after a few seconds)."]
+                },
+                "Strong Back": {
+                    description: "Permanently increases your maximum inventory carrying capacity limit by 60 points.",
+                    levels: ["Permanently increases your maximum inventory carrying capacity limit by 60 points."]
+                },
+                "Attack Is The Best Defense": {
+                    description: "Generates Adrenaline Points when performing defensive maneuvers: Parries generate 0.1, Counterattacks generate 0.4, Dodges generate 0.3, and Rolls generate 0.2 Adrenaline Points. (Has a 5-second internal cooldown).",
+                    levels: ["Generates Adrenaline Points when performing defensive maneuvers: Parries generate 0.1, Counterattacks generate 0.4, Dodges generate 0.3, and Rolls generate 0.2 Adrenaline Points. (Has a 5-second internal cooldown)."]
+                },
+                "Metabolism Boost": {
+                    description: "Consumes available Adrenaline Points to reduce the Toxicity cost of drinking potions by 33% per point spent. (Does not apply to Mutagen Decoctions).",
+                    levels: ["Consumes available Adrenaline Points to reduce the Toxicity cost of drinking potions by 33% per point spent. (Does not apply to Mutagen Decoctions)."]
+                },
+                "Trick Shot": {
+                    description: "Allows Geralt to load and fire one extra crossbow bolt before being forced to play the reload animation.",
+                    levels: ["Allows Geralt to load and fire one extra crossbow bolt before being forced to play the reload animation."]
+                },
+                "Advanced Pyrotechnics": {
+                    description: "Direct damage dealt by any of your detonating bombs generates 0.1 Adrenaline Points.",
+                    levels: ["Direct damage dealt by any of your detonating bombs generates 0.1 Adrenaline Points."]
+                },
+                "Battle Frenzy": {
+                    description: "Replaces Battle Trance's default behavior: instead of increasing weapon damage, each active Adrenaline Point increases your critical hit chance by 8% (up to a maximum +24%).",
+                    levels: ["Replaces Battle Trance's default behavior: instead of increasing weapon damage, each active Adrenaline Point increases your critical hit chance by 8% (up to a maximum +24%)."]
+                },
+                "Gorged On Power": {
+                    description: "The unique stat buff acquired from drawing from a Place of Power lasts indefinitely, rather than on a timer. However, you may only have one Place of Power buff active at any given time.",
+                    levels: ["The unique stat buff acquired from drawing from a Place of of Power lasts indefinitely, rather than on a timer. However, you may only have one Place of Power buff active at any given time."]
+                },
+                "In Combat's Fires": {
+                    description: "Geralt becomes completely immune to the negative status side-effects of his own dropped bombs and specialty trick crossbow bolts.",
+                    levels: ["Geralt becomes completely immune to the negative status side-effects of his own dropped bombs and specialty trick crossbow bolts."]
+                },
+                "Heavy Artillery": {
+                    description: "All offensive bomb damage is increased by a massive 200%, but the maximum ammunition capacity of bombs in your equipment slots is cut in half (50% reduction). Does not affect status-only bombs.",
+                    levels: ["All offensive bomb damage is increased by a massive 200%, but the maximum ammunition capacity of bombs in your equipment slots is cut in half (50% reduction). Does not affect status-only bombs."]
+                }
+            },
+            Mutations: {
+                "Deadly Counter": {
+                    description: "Sword attacks deal 25% more damage to human enemies immune to counterattacks and monsters. If an opponent is under 25% Vitality, a successful counterattack immediately triggers a finishers animation, killing them instantly.",
+                    requirements: "2 Greater Red Mutagens, 2 Ability Points"
+                },
+                "Bloodbath": {
+                    description: "Every successful melee strike with your sword increases your attack power by 5% until the end of the combat encounter. This bonus stacks up to a maximum of 250%. However, taking any damage from an enemy completely resets this bonus to 0%.",
+                    requirements: "3 Greater Red Mutagens, 3 Ability Points"
+                },
+                "Magic Sensibilities": {
+                    description: "Allows your offensive Signs to inflict critical hits. The critical hit chance scales directly with your overall Sign Intensity. Enemies killed by a Sign critical hit explode, dealing minor damage to nearby foes.",
+                    requirements: "2 Greater Blue Mutagens, 2 Ability Points"
+                },
+                "Piercing Cold": {
+                    description: "Adds a freezing effect to the Aard Sign. Enemies caught in the blast have a 25% chance to be instantly frozen (which kills them outright if they are simultaneously knocked down). Enemies who are not frozen take massive bonus frost damage instead.",
+                    requirements: "3 Greater Blue Mutagens, 3 Ability Points"
+                },
+                "Toxic Blood": {
+                    description: "When an enemy hits you with a melee strike, they take immediate internal damage proportional to your current Potion Toxicity level. For every point of active Toxicity, the enemy takes 1.5% of the damage they just dealt back as net damage.",
+                    requirements: "2 Greater Green Mutagens, 2 Ability Points"
+                },
+                "Euphoria": {
+                    description: "For every point of active potion/decoction Toxicity you possess, your overall Sword Damage and Sign Intensity are increased by 0.75%. (Note: This caps out at a maximum bonus of 75% in the Next-Gen version to curb infinite scaling).",
+                    requirements: "3 Greater Green Mutagens, 3 Ability Points"
+                },
+                "Conductors of Magic": {
+                    description: "When you have a magic, unique, or Witcher sword drawn, the raw damage value displayed on that weapon is added directly to your base Sign damage calculations.",
+                    requirements: "2 Greater Red Mutagens, 2 Greater Blue Mutagens, 3 Ability Points"
+                },
+                "Cat Eyes": {
+                    description: "Crossbow damage is massively amplified. Crossbow bolts deal 700% more raw damage and their baseline critical hit chance is raised by 50%. Crossbow bolts also pierce through opponents, knocking them down or stunning them. If an enemy is at full health, a bolt instantly takes away 15% of their Max Vitality.",
+                    requirements: "2 Greater Red Mutagens, 2 Greater Green Mutagens, 3 Ability Points"
+                },
+                "Metamorphosis": {
+                    description: "Landing a critical hit or applying a critical effect (like Burning or Bleeding) automatically activates a random Mutagen Decoction from your alchemy inventory for 120 seconds. This occurs without adding any Toxicity to your pool. Up to 3 decoctions can be activated simultaneously this way.",
+                    requirements: "2 Greater Blue Mutagens, 2 Greater Green Mutagens, 3 Ability Points"
+                },
+                "Mutated Skin": {
+                    description: "Each available Adrenaline Point reduces all incoming damage taken by 15% (up to a maximum cap of 45% damage reduction at 3 Adrenaline Points).",
+                    requirements: "2 Greater Red, 2 Greater Blue, 2 Greater Green Mutagens, 5 Ability Points"
+                },
+                "Adrenaline Rush": {
+                    description: "Upon entering combat, your Attack Power and Sign Intensity are instantly increased by 30% for each enemy present in the encounter for the first 30 seconds. However, after those 30 seconds pass, the buff drops off and your overall stats are reduced by 10% per enemy for the remaining duration of the fight.",
+                    requirements: "2 Greater Red, 2 Greater Blue, 2 Greater Green Mutagens, 5 Ability Points"
+                },
+                "Second Life": {
+                    description: "When your Vitality is completely depleted to 0, Geralt becomes temporarily invulnerable, clears all negative status effects, and immediately restores 100% of his maximum Vitality. This mutation has a fixed 180-second cooldown between triggers.",
+                    requirements: "2 Greater Red, 2 Greater Blue, 2 Greater Green Mutagens, 5 Ability Points"
+                },
+                "Strengthened Synapses": {
+                    description: "The base mutation that allows for further research. Unlocks the ability to research other mutations.",
+                    requirements: "Unlocked by default."
+                }
+            }
         };
 
         const mutagensList = [
@@ -1006,6 +1462,7 @@
         const coreMutationSlot = document.getElementById('core-mutation-slot');
 
         function checkIsSlotted(tree, index) {
+            // This function is a candidate for optimization.
             for (let sId in characterSlots) {
                 if (characterSlots[sId] && characterSlots[sId].tree === tree && characterSlots[sId].index === index) {
                     return true;
@@ -1162,6 +1619,45 @@
                             }));
                         });
 
+                        circ.addEventListener('mouseenter', (e) => {
+                            const tooltip = e.currentTarget.querySelector('.skill-tooltip');
+                            if (!tooltip || !tooltip.innerHTML) return;
+
+                            tooltip.style.bottom = '105%';
+                            tooltip.style.top = 'auto';
+                            tooltip.style.display = 'block';
+
+                            const rect = tooltip.getBoundingClientRect();
+
+                            if (rect.top < 0) {
+                                tooltip.style.top = '105%';
+                                tooltip.style.bottom = 'auto';
+                            }
+                        });
+
+                        circ.addEventListener('mouseleave', (e) => {
+                            const tooltip = e.currentTarget.querySelector('.skill-tooltip');
+                            if (tooltip) {
+                                tooltip.style.display = 'none';
+                            }
+                        });
+
+                        const tooltip = document.createElement('div');
+                        tooltip.className = 'skill-tooltip';
+                        const tooltipData = skillTooltips.Mutations?.[mData.name];
+
+                        if (tooltipData) {
+                            let tooltipContent = `<div class="tooltip-name">${mData.name}</div>`;
+                            tooltipContent += `<div class="tooltip-desc">${tooltipData.description}</div>`;
+                            if (tooltipData.requirements) {
+                                tooltipContent += `<div style="margin-top: 10px; color: #ffdd66; font-size: 0.75rem;"><b>Requires:</b> ${tooltipData.requirements}</div>`;
+                            }
+                            tooltip.innerHTML = tooltipContent;
+                        } else {
+                            tooltip.style.display = 'none';
+                        }
+                        circ.appendChild(tooltip);
+
                         rowContainer.appendChild(circ);
                     });
                     gridRoot.appendChild(rowContainer);
@@ -1262,6 +1758,53 @@
                         name: skill.name
                     }));
                 });
+
+                node.addEventListener('mouseenter', (e) => {
+                    const tooltip = e.currentTarget.querySelector('.skill-tooltip');
+                    if (!tooltip || !tooltip.innerHTML) return;
+
+                    // Reset position before calculating
+                    tooltip.style.bottom = '105%';
+                    tooltip.style.top = 'auto';
+                    tooltip.style.display = 'block';
+
+                    const rect = tooltip.getBoundingClientRect();
+
+                    // If tooltip is off-screen at the top, flip it to be below the node
+                    if (rect.top < 0) {
+                        tooltip.style.top = '105%';
+                        tooltip.style.bottom = 'auto';
+                    }
+                });
+
+                node.addEventListener('mouseleave', (e) => {
+                    const tooltip = e.currentTarget.querySelector('.skill-tooltip');
+                    if (tooltip) {
+                        tooltip.style.display = 'none';
+                    }
+                });
+
+                const tooltip = document.createElement('div');
+                tooltip.className = 'skill-tooltip';
+                
+                const tooltipData = skillTooltips[currentTree]?.[skill.name];
+                if (tooltipData) {
+                    let tooltipContent = `<div class="tooltip-name">${skill.name}</div>`;
+                    tooltipContent += `<div class="tooltip-desc">${tooltipData.description}</div>`;
+                    
+                    if (tooltipData.levels) {
+                        tooltipContent += '<ul class="tooltip-levels">';
+                        tooltipData.levels.forEach((level, i) => {
+                            const levelClass = (count > 0 && i < count) ? 'unlocked' : 'locked';
+                            tooltipContent += `<li class="${levelClass}"><b>Level ${i + 1}:</b> ${level}</li>`;
+                        });
+                        tooltipContent += '</ul>';
+                    }
+                    tooltip.innerHTML = tooltipContent;
+                } else {
+                    tooltip.style.display = 'none';
+                }
+                node.appendChild(tooltip);
 
                 gridRoot.appendChild(node);
             });
